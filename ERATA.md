@@ -8,5 +8,7 @@
 https://github.com/KatherLab/ImmunotherapyModels/blob/main/FitFunctions.py
 * `FitFunctions.py:36` `dim**2/3` -> `dim**(2/3)`
 
+## Source
+* The authors don't provide a mapping to the named studies in the paper to their anonymized studies.
 
 Bacaër, N. (2011). A short history of mathematical population dynamics (Vol. 618). London: Springer.
