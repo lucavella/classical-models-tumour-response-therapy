@@ -2,7 +2,7 @@ import math
 
 #converts the time to weeks
 #e.g if the value is 227, this will return 33 since it happend in the 33th week of treatment
-def Correct_Time_Vector(time, convertToWeek = True):
+def correct_time_vector(time, convertToWeek = True):
     if convertToWeek:
         #days are converted to in which week they occured
         time = [math.ceil(i/7) for i in time]
@@ -21,14 +21,14 @@ def is_number(string):
         return False
 
 #if a value is not numeric, convert it to 'valueToReplace'
-def Remove_String_From_Numeric_Vector(vector, valueToReplace):
+def remove_string_from_numeric_vector(vector, valueToReplace):
     vector = [valueToReplace if not is_number(str(i)) else i for i in vector]
     vector = [valueToReplace if  str(i) == 'nan' else i for i in vector]
     return vector
 
 #detect if the trend of data is going, up, down or fluctuates
 #based on what is explained in paper section "Patient categorization according to RECIST and trajectory type"  
-def Detect_Trend_Of_Data(vector):
+def detect_trend_of_data(vector):
     diff = [] #difference of each LD measurement 
     for d in range(len(vector)-1):
         diff.append(vector[d + 1] - vector[d])  #difference of each LD measurement at timepoint t + 1 to its previous measurement at time point t for each patient
