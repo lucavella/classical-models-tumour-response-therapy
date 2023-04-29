@@ -1,4 +1,5 @@
 import math
+import re
 
 #converts the time to weeks
 #e.g if the value is 227, this will return 33 since it happend in the 33th week of treatment
@@ -54,7 +55,10 @@ def detect_trend_of_data(vector):
     return trend
 
 
-
+def remove_numbers_in_string(list):
+    pattern = '[0-9]'
+    list = [re.sub(pattern, '', i) for i in list]
+    return list
 
 
 
