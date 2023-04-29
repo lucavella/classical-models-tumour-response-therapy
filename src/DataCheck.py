@@ -156,7 +156,7 @@ if __name__ == "__main__":
     #fig_1C(studyname="BIRCH", study=study_3, amount_of_patients = 100)
     #fig_1C(studyname="OAK", study=study_4, amount_of_patients = 10)
     #fig_1C(studyname="IMvigor 210", study=study_5, amount_of_patients = 10)
-    fig_1D(study_name='FIR', study=study_3)
+    fig_1D(study_name='BIRCH', study=study_3)
         
     
 
