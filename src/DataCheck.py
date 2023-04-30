@@ -15,8 +15,7 @@ study_4 = pd.read_excel('./Original Paper/studies/Study4.xlsx') #OAK
 study_5 = pd.read_excel('./Original Paper/studies/Study5.xlsx') #IMvigor 210
 
 #list of the dataframes
-studies = [study_1, study_2, study_3, study_4, study_5]
-
+studies = [study_1, study_2, study_3, study_4,study_5]
 def calculate_patients():
     patients_with_three_or_more_datapoints = 0
     patients_with_six_or_more_datapoints = 0
@@ -35,8 +34,7 @@ def calculate_patients():
     print(f'patients with three or more datapoints: {patients_with_three_or_more_datapoints}')
     print(f'patients with six or more datapoints: {patients_with_six_or_more_datapoints}')
 
-
-#plot fig 1C study1
+#plot fig 1C 
 #This plot is to show that all categories are present
 def fig_1C(studyname, study, amount_of_patients = 10):
     patientID = list(study['Patient_Anonmyized'].unique()) #get all unique patients in this study
@@ -89,7 +87,9 @@ def fig_1C(studyname, study, amount_of_patients = 10):
 
     plt.show()
     
-    
+#plot fig1D 
+#We used a barchart instead of a nested pie chart for readability
+#this plot is used to show the distribution of RECIST outcomes per patient arm of a study.
 def fig_1D(study_name ,study):
     study_arms = list(study['Study_Arm'].unique()) #get all subgroups of patients
     
@@ -147,7 +147,80 @@ def fig_1D(study_name ,study):
     plt.legend()
     plt.show()
     
+def fig_1E(studies):    
+    first_datapoint_prediction = []
+    second_datapoint_prediction = []
+    third_datapoint_prediction = []
+    fourth_datapoint_prediction = []
+    
+    for study in studies:
+        study_arms = list(study['Study_Arm'].unique())
+        for arm in study_arms:
+            counter = 0
+            filteredData = study.loc[study['Study_Arm'] == arm]
+            patientIDs = list(filteredData['Patient_Anonmyized'].unique())
+            amount_of_patients = len(list(filteredData['Patient_Anonmyized'].unique()))
+            
+            #true en falses bijhouden van de correcte voorspellingen
+            first_point = []
+            second_point = []
+            third_point = []
+            fourth_point = []
+            X = [first_point,second_point,third_point,fourth_point]
+            
+            #patienten aflopen in de study arm
+            while counter < amount_of_patients:
+                key = patientIDs[counter]
+                filteredDataPatient = study.loc[study['Patient_Anonmyized'] == key]
+                
+                #voor elk amount of datapoints de voorspelling doen
+                for idx, point in enumerate(X):
+                    if len(filteredDataPatient) >= idx + 1:
+                        datapoints = list(filteredDataPatient['TargetLesionLongDiam_mm']) 
+                        time = list(filteredDataPatient['Treatment_Day'])
 
+                        time = ef.correct_time_vector(time, convertToWeek = True) #convert the days to weeks
+                        datapoints = ef.remove_string_from_numeric_vector(datapoints, valueToReplace = 0) #convert the mi
+                        datapoints = [x for _,x in sorted(zip(time,datapoints))]
+                        time.sort()
+                        trend = ef.detect_trend_of_data(datapoints)
+                        
+                        #check for certain amount of datapoints
+                        restricted_data_point = datapoints[0:idx + 1]
+                        restricted_time = time[0:idx + 1]
+                        restricted_time = ef.correct_time_vector(restricted_time, convertToWeek = True)
+                        
+                        restricted_data_point = ef.remove_string_from_numeric_vector(restricted_data_point, valueToReplace = 0) #convert the mi
+                        restricted_data_point = [x for _,x in sorted(zip(restricted_time,restricted_data_point))]
+                        
+                        restricted_time.sort()
+                        restricted_trend = ef.detect_trend_of_data(restricted_data_point)
+                        
+                        #voorspelling is hetzelfde = true
+                        if trend ==  restricted_trend:
+                            point.append(True)
+                        #voorspelling is niet hetzelfde = false
+                        else:
+                            point.append(False)
+                counter += 1
+                
+            #hier append van probabiliteiten in de lijsten
+            first_datapoint_prediction.append(round(sum(first_point)/len(first_point) * 100, 2))
+            second_datapoint_prediction.append(round(sum(second_point)/len(second_point) * 100, 2))
+            third_datapoint_prediction.append(round(sum(third_point)/len(third_point) * 100, 2))
+            fourth_datapoint_prediction.append(round(sum(fourth_point)/len(fourth_point) * 100, 2))
+    
+    data = [first_datapoint_prediction, second_datapoint_prediction, third_datapoint_prediction, fourth_datapoint_prediction]
+    
+    fig,ax = plt.subplots()
+    
+    # Creating plot
+    bp = ax.boxplot(data, positions=[1,2,3,4])
+    ax.set_ylabel('probability (%)')
+    ax.set_xlabel('amount of datapoints used to predict')
+    ax.set_title("probability of correct prediction with 1-4 datapoints")
+    # show plot
+    plt.show()
 
 if __name__ == "__main__":
     #calculate_patients()
@@ -156,7 +229,8 @@ if __name__ == "__main__":
     #fig_1C(studyname="BIRCH", study=study_3, amount_of_patients = 100)
     #fig_1C(studyname="OAK", study=study_4, amount_of_patients = 10)
     #fig_1C(studyname="IMvigor 210", study=study_5, amount_of_patients = 10)
-    fig_1D(study_name='BIRCH', study=study_3)
+    #fig_1D(study_name='BIRCH', study=study_3)
+    fig_1E(studies)
         
     
 

@@ -54,6 +54,8 @@ def detect_trend_of_data(vector):
         trend = 'Fluctuate'
     return trend
 
+    
+
 
 def remove_numbers_in_string(list):
     pattern = '[0-9]'
