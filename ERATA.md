@@ -12,6 +12,9 @@
 https://github.com/KatherLab/ImmunotherapyModels/blob/main/FitFunctions.py
 * `FitFunctions.py:36` `dim**2/3` -> `dim**(2/3)`
 
+* Wrong parameter bounds for model functions (general and normal Gompertz beta lower bound = 0), source used in paper:
+    Kuang, Y., Nagy, J. D., & Eikenberry, S. E. (2018). *Introduction to mathematical oncology*. CRC Press. (table 2.1)
+    
 * If LD has no value (NOT EVALUABLE, TOO SMALL TO MEASURE), paper assumes it is too small to evaluate and thus set it to a volume of 0. We use the same assumption
 
 ## Source

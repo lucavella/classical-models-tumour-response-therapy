@@ -17,12 +17,22 @@ class Exponential:
                 (a - b) * V
         )(t, V0)
 
+    bounds = (
+        [0, 0, 0], # lower bound
+        [np.inf, np.inf, np.inf] # upper bound
+    )
+
 class LogisticVerhulst:
     def predict(t, V0, a, b):
         return solutionDE(
             lambda V, t: \
                 a * V - b * V ** 2
         )(t, V0)
+
+    bounds = (
+        [0, 0, 0], # lower bound
+        [np.inf, np.inf, np.inf] # upper bound
+    )
 
 class Gompertz:
     def predict(t, V0, a, b):
@@ -31,12 +41,22 @@ class Gompertz:
                 V * (b - a * np.log(V))
         )(t, V0)
 
+    bounds = (
+        [0, 0, 0], # lower bound
+        [np.inf, np.inf, np.inf] # upper bound
+    )
+
 class GeneralGompertz:
     def predict(t, V0, a, b, l):
         return solutionDE(
             lambda V, t: \
                 V ** l * (b - a * np.log(V))
         )(t, V0)
+
+    bounds = (
+        [0, 0, 0, 2 / 3], # lower bound
+        [np.inf, np.inf, np.inf, 1] # upper bound
+    )
 
 class ClassicBertalanffy:
     def predict(t, V0, a, b):
@@ -45,12 +65,22 @@ class ClassicBertalanffy:
                 a * V ** (2 / 3) - b * V
         )(t, V0)
 
+    bounds = (
+        [0, 0, 0], # lower bound
+        [np.inf, np.inf, np.inf] # upper bound
+    )
+
 class GeneralBertalanffy:
     def predict(t, V0, a, b, l):
     return solutionDE(
         lambda V, t: \
             a * V ** l - b * V
     )(t, V0)
+
+    bounds = (
+        [0, 0, 0, 2 / 3], # lower bound
+        [np.inf, np.inf, np.inf, 1] # upper bound
+    )
 
 
 # Extra models
