@@ -50,7 +50,7 @@ def fig_1C(studyname, study, amount_of_patients = 10):
             time = list(filteredData['Treatment_Day'])
 
             time = ef.correct_time_vector(time, convertToWeek = True) #convert the days to weeks
-            datapoints = ef.remove_string_from_numeric_vector(datapoints, valueToReplace = 0) #convert the missing values to zero
+            datapoints = ef.clean_nonnumeric(datapoints, with_value = 0) #convert the missing values to zero
 
             datapoints = [x for _,x in sorted(zip(time,datapoints))]
             time.sort()
@@ -98,7 +98,6 @@ def fig_1D(study_name ,study):
     fluctuate_list = []
     
     for arm in study_arms:
-        counter = 0
         up_counter = 0
         down_counter = 0
         fluctuate_counter = 0
@@ -106,16 +105,14 @@ def fig_1D(study_name ,study):
         patientID = list(filteredData['Patient_Anonmyized'].unique())
         amount_of_patients = len(list(filteredData['Patient_Anonmyized'].unique()))
         
-        
-        while counter < amount_of_patients:
-            key = patientID[counter]
-            filteredDataPatient = study.loc[study['Patient_Anonmyized'] == key]
+        for patient in patientID:
+            filteredDataPatient = study.loc[study['Patient_Anonmyized'] == patient]
             if len(filteredDataPatient) >= 2: #patients needs to have more than 2 datapoints
                 datapoints = list(filteredDataPatient['TargetLesionLongDiam_mm']) 
                 time = list(filteredDataPatient['Treatment_Day'])
                 
                 time = ef.correct_time_vector(time, convertToWeek = True) #convert the days to weeks
-                datapoints = ef.remove_string_from_numeric_vector(datapoints, valueToReplace = 0) #convert the mi
+                datapoints = ef.clean_nonnumeric(datapoints, with_value = 0) #convert the mi
                 datapoints = [x for _,x in sorted(zip(time,datapoints))]
                 time.sort()
                 trend = ef.detect_trend_of_data(datapoints)
@@ -126,7 +123,6 @@ def fig_1D(study_name ,study):
                     down_counter +=1
                 elif trend == "Fluctuate":
                     fluctuate_counter +=1
-            counter += 1
         up_list.append(up_counter)
         down_list.append(down_counter)
         fluctuate_list.append(fluctuate_counter)
@@ -180,7 +176,7 @@ def fig_1E(studies):
                         time = list(filteredDataPatient['Treatment_Day'])
 
                         time = ef.correct_time_vector(time, convertToWeek = True) #convert the days to weeks
-                        datapoints = ef.remove_string_from_numeric_vector(datapoints, valueToReplace = 0) #convert the mi
+                        datapoints = ef.clean_nonnumeric(datapoints, with_value = 0) #convert the mi
                         datapoints = [x for _,x in sorted(zip(time,datapoints))]
                         time.sort()
                         trend = ef.detect_trend_of_data(datapoints)
@@ -190,7 +186,7 @@ def fig_1E(studies):
                         restricted_time = time[0:idx + 1]
                         restricted_time = ef.correct_time_vector(restricted_time, convertToWeek = True)
                         
-                        restricted_data_point = ef.remove_string_from_numeric_vector(restricted_data_point, valueToReplace = 0) #convert the mi
+                        restricted_data_point = ef.clean_nonnumeric(restricted_data_point, with_value = 0) #convert the mi
                         restricted_data_point = [x for _,x in sorted(zip(restricted_time,restricted_data_point))]
                         
                         restricted_time.sort()
@@ -223,13 +219,13 @@ def fig_1E(studies):
     plt.show()
 
 if __name__ == "__main__":
-    #calculate_patients()
-    #fig_1C(studyname="FIR", study=study_1, amount_of_patients = 10)
-    #fig_1C(studyname="POPLAR", study=study_2, amount_of_patients = 10)
-    #fig_1C(studyname="BIRCH", study=study_3, amount_of_patients = 100)
-    #fig_1C(studyname="OAK", study=study_4, amount_of_patients = 10)
-    #fig_1C(studyname="IMvigor 210", study=study_5, amount_of_patients = 10)
-    #fig_1D(study_name='BIRCH', study=study_3)
+    calculate_patients()
+    fig_1C(studyname="FIR", study=study_1, amount_of_patients = 10)
+    fig_1C(studyname="POPLAR", study=study_2, amount_of_patients = 10)
+    fig_1C(studyname="BIRCH", study=study_3, amount_of_patients = 100)
+    fig_1C(studyname="OAK", study=study_4, amount_of_patients = 10)
+    fig_1C(studyname="IMvigor 210", study=study_5, amount_of_patients = 10)
+    fig_1D(study_name='BIRCH', study=study_3)
     fig_1E(studies)
         
     

@@ -13,19 +13,19 @@ def correct_time_vector(time, convertToWeek = True):
         time = [0.1 if i<=0 else i for i in time]
     return time
 
-#predicate to check if string is an integer
-def is_number(string):
-    try:
-        float(string)
-        return True
-    except ValueError:
-        return False
+#if a value is not numeric, convert it to 'with_value'
+def clean_nonnumeric(vector, with_value):
+    #predicate to check if string is an integer
+    def is_number(string):
+        try:
+            return not math.isnan(float(string))
+        except ValueError:
+            return False
 
-#if a value is not numeric, convert it to 'valueToReplace'
-def remove_string_from_numeric_vector(vector, valueToReplace):
-    vector = [valueToReplace if not is_number(str(i)) else i for i in vector]
-    vector = [valueToReplace if  str(i) == 'nan' else i for i in vector]
-    return vector
+    return [
+        i if is_number(i) else with_value
+        for i in vector
+    ]
 
 #detect if the trend of data is going, up, down or fluctuates
 #based on what is explained in paper section "Patient categorization according to RECIST and trajectory type"  
