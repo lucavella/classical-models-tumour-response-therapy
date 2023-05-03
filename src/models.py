@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.integrate as scint
 
-# y0 = V0 (or y0 = [K0, V0] for dynamic CC)
+# y0 = V(t=0) (or y0 = [K(t=0), V(t=0)] for dynamic CC)
 def solutionDE(de):
     return lambda y0, t: \
         scint.odeint(de, y0, t)
@@ -45,8 +45,8 @@ def generalBertalanffyDE(alph, beta, lamb):
 
 
 # Extra models
-
 # https://doi.org/10.1371/journal.pcbi.1003800 (p. 3)
+
 def exponentialLinearDE(a, b, tau):
     return solutionDE(
         lambda V, t: \

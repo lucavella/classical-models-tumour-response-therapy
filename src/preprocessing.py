@@ -5,6 +5,8 @@ import extra_functions as ef
 
 
 # pairwise check if patient ID is reused across studies
+# input: list of studies as dataframes
+# output: False if the patient ID's are disjoint, True otherwise
 def check_patient_overlap(studies):
     for study1, study2 in it.combinations(studies, 2):
         # pairwise inner join to check if empty
@@ -14,6 +16,8 @@ def check_patient_overlap(studies):
 
 
 # perform preprocessing as described in paper
+# input: list of studies as dataframes
+# output: combined preprocessed dataframe
 def preprocess(studies):
     for study in studies:
         # set nonnumeric values to 0
@@ -39,6 +43,14 @@ def preprocess(studies):
     return studies
 
 
+# get all records of patients with 'i' or more data points
+# input: joint dataframe of all studies, like the output of 'preprocess'
+# output: dataframe with data points of patients with 'i' or more data points
+def get_at_least(studies, i):
+    return studies.groupby('Patient_Anonmyized') \
+                  .filter(lambda c: c['Patient_Anonmyized'].count() >= i)
+
+
 if __name__ == '__main__':
     study1 = pd.read_excel('../Original Paper/studies/Study1.xlsx')
     study2 = pd.read_excel('../Original Paper/studies/Study2.xlsx')
@@ -48,4 +60,6 @@ if __name__ == '__main__':
     studies = [study1, study2, study3, study4, study5]
     
     print('Patient ID overlap across studies:', check_patient_overlap(studies))
-    print(preprocess(studies))
+    preprocessed = preprocess(studies)
+    print(preprocessed)
+    print(get_at_least(preprocessed, 6))
