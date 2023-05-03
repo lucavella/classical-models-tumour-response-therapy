@@ -27,18 +27,18 @@ def preprocess(studies):
         # calculate tumor volume using formula
         study['TumorVolume_mm3'] = study['TargetLesionLongDiam_mm'].apply(lambda ld: ld ** 3 * 0.5)
 
-        # extract study and arm nr
-        study['StudyNr'] = study['Study_Arm'].apply(lambda saTxt: int(saTxt[6]))
-        study['Arm'] = study['Study_Arm'].apply(lambda saTxt: int(saTxt[-1]))
-        study.drop('Study_Arm', axis=1, inplace=True)
-
     # merge all dataframes
     studies = pd.concat(studies, ignore_index=True)
 
     # normalize tumor volume to range of [0,1]
     min_tv = studies['TumorVolume_mm3'].min()
     max_tv = studies['TumorVolume_mm3'].max()
-    studies['TumorVolume_norm'] = studies['TumorVolume_mm3'].apply(lambda tv: (tv - min_tv) / (max_tv - min_tv))
+    studies['TumorVolume_Norm'] = studies['TumorVolume_mm3'].apply(lambda tv: (tv - min_tv) / (max_tv - min_tv))
+
+    # extract study and arm nr
+    studies['StudyNr'] = studies['Study_Arm'].apply(lambda saTxt: int(saTxt[6]))
+    studies['Arm'] = studies['Study_Arm'].apply(lambda saTxt: int(saTxt[-1]))
+    studies.drop('Study_Arm', axis=1, inplace=True)
 
     return studies
 
@@ -48,7 +48,7 @@ def preprocess(studies):
 # output: dataframe with data points of patients with 'i' or more data points
 def get_at_least(studies, i):
     return studies.groupby('Patient_Anonmyized') \
-                  .filter(lambda c: c['Patient_Anonmyized'].count() >= i)
+                  .filter(lambda group: group['Patient_Anonmyized'].count() >= i)
 
 
 if __name__ == '__main__':

@@ -15,72 +15,80 @@ class Exponential:
         return solutionDE(
             lambda V, t: \
                 (a - b) * V
-        )(t, V0)
+        )(t, V0)[:, 0]
 
-    bounds = (
-        [0, 0, 0], # lower bound
-        [np.inf, np.inf, np.inf] # upper bound
-    )
+    bounds = [
+        (0, np.inf), # V0
+        (0, np.inf), # a
+        (0, np.inf), # b
+    ]
 
 class LogisticVerhulst:
     def predict(t, V0, a, b):
         return solutionDE(
             lambda V, t: \
                 a * V - b * V ** 2
-        )(t, V0)
+        )(t, V0)[:, 0]
 
-    bounds = (
-        [0, 0, 0], # lower bound
-        [np.inf, np.inf, np.inf] # upper bound
-    )
+    bounds = [
+        (0, np.inf), # V0
+        (0, np.inf), # a
+        (0, np.inf), # b
+    ]
 
 class Gompertz:
     def predict(t, V0, a, b):
         return solutionDE(
             lambda V, t: \
                 V * (b - a * np.log(V))
-        )(t, V0)
+        )(t, V0)[:, 0]
 
-    bounds = (
-        [0, 0, 0], # lower bound
-        [np.inf, np.inf, np.inf] # upper bound
-    )
+    bounds = [
+        (0, np.inf), # V0
+        (0, np.inf), # a
+        (0, np.inf), # b
+    ]
 
 class GeneralGompertz:
     def predict(t, V0, a, b, l):
         return solutionDE(
             lambda V, t: \
                 V ** l * (b - a * np.log(V))
-        )(t, V0)
+        )(t, V0)[:, 0]
 
-    bounds = (
-        [0, 0, 0, 2 / 3], # lower bound
-        [np.inf, np.inf, np.inf, 1] # upper bound
-    )
+    bounds = [
+        (0, np.inf), # V0
+        (0, np.inf), # a
+        (0, np.inf), # b
+        (2 / 3, 1),  # l
+    ]
 
 class ClassicBertalanffy:
     def predict(t, V0, a, b):
         return solutionDE(
             lambda V, t: \
                 a * V ** (2 / 3) - b * V
-        )(t, V0)
+        )(t, V0)[:, 0]
 
-    bounds = (
-        [0, 0, 0], # lower bound
-        [np.inf, np.inf, np.inf] # upper bound
-    )
+    bounds = [
+        (0, np.inf), # V0
+        (0, np.inf), # a
+        (0, np.inf), # b
+    ]
 
 class GeneralBertalanffy:
     def predict(t, V0, a, b, l):
-    return solutionDE(
-        lambda V, t: \
-            a * V ** l - b * V
-    )(t, V0)
+        return solutionDE(
+            lambda V, t: \
+                a * V ** l - b * V
+        )(t, V0)[:, 0]
 
-    bounds = (
-        [0, 0, 0, 2 / 3], # lower bound
-        [np.inf, np.inf, np.inf, 1] # upper bound
-    )
+    bounds = [
+        (0, np.inf), # V0
+        (0, np.inf), # a
+        (0, np.inf), # b
+        (2 / 3, 1),  # l
+    ]
 
 
 # Extra models
@@ -91,14 +99,14 @@ class ExponentialLinear:
         return solutionDE(
             lambda V, t: \
                 a * V if t <= u else b
-        )(t, V0)
+        )(t, V0)[:, 0]
 
 class GeneralLogistic:
     def predict(t, V0, a, v, K):
         return solutionDE(
             lambda V, t: \
                 gamm * V * (1 - (V / K) ** v)
-        )(t, V0)
+        )(t, V0)[:, 0]
 
 class dynamicCarryingCapacity:
     def predict(t, V0, a, b):
@@ -111,4 +119,4 @@ class dynamicCarryingCapacity:
             # y is a [K, V] vector
             lambda y, t : \
                 [dKdt(y[1]), dVdt(y[0], y[1])]
-        )(t, V0)
+        )(t, V0)[:, 0]
