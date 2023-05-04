@@ -11,7 +11,7 @@ import fitting as fit
 
 # plot the change in LD from baseline for given study
 # corresponds to figure 1C
-def plot_study_trend(name, study, amount=10):
+def plot_change_trend(name, study, amount=10):
     study = utils.get_at_least(study, 2) # patients need >= 2 data points
     fig, ax = plt.subplots()
     
@@ -39,74 +39,59 @@ def plot_study_trend(name, study, amount=10):
     # create plot labels, legend, ...
     plt.axhline(y=0, linestyle=':', color='black')
     plt.xlabel('Time (weeks)', fontsize=16)
-    plt.ylabel('Change in  LD From Baseline(mm)', fontsize=16)
-    plt.title(name, fontsize=24)
+    plt.ylabel('Change in LD from baseline (mm)', fontsize=16)
+    plt.title(f'Change in LD and trend per patient for {name}', fontsize=24)
     plt.xticks(fontsize=16)
     plt.yticks(fontsize=16)
-
     ax.legend(
         [Line2D([0], [0], color=trend.color(), lw=4) for trend in utils.Trend], 
         [trend.name for trend in utils.Trend], 
-        fontsize=12
+        fontsize=16
+    )
+    plt.show()
+
+
+# plot the proportions of trends for a study
+# corresponds to figure 1D, but barchart instead of a nested pie chart for readability
+def plot_proportion_trend(name, study):
+    # count amount of patients per trend and arm
+    trend_counts = study.groupby(['Arm', 'PatientID']) \
+                        .apply(lambda p: utils.detect_trend(p['TargetLesionLongDiam_mm'])) \
+                        .rename('Trend').reset_index() \
+                        .groupby('Arm')['Trend'] \
+                        .value_counts()
+
+    # set trend categories that do not appear to 0
+    arms = np.array(trend_counts.index.get_level_values('Arm').unique())
+    trend_counts = trend_counts.reindex(
+        pd.MultiIndex.from_product([arms, list(utils.Trend)]), 
+        fill_value=0
     )
 
+    # plot for each trend
+    width = 0.2
+    n_trends = len(utils.Trend)
+    offsets = np.linspace(width / 2 - n_trends / 10, - width / 2 + n_trends / 10, num=n_trends) # calculate bar offsets
+    for trend, offset in zip(utils.Trend, offsets):
+        # get count for each arm and plot
+        trend_count = trend_counts.loc[pd.IndexSlice[:, trend]]
+        plt.bar(
+            arms + offset,
+            trend_count, 
+            width=width, 
+            label=trend.name, 
+            color=trend.color()
+        )
+    
+    plt.xticks(arms)
+    plt.xlabel("Study arms", fontsize=16)
+    plt.ylabel("Number of occurences", fontsize=16)
+    plt.title(f'Trend categories per Study Arm for {name}', fontsize=24)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(fontsize=16)
     plt.show()
-    
-#plot fig1D 
-#We used a barchart instead of a nested pie chart for readability
-#this plot is used to show the distribution of RECIST outcomes per patient arm of a study.
-def fig_1D(study_name ,study):
-    study_arms = list(study['StudyArm'].unique()) #get all subgroups of patients
-    
-    up_list = []
-    down_list = []
-    fluctuate_list = []
-    
-    for arm in study_arms:
-        up_counter = 0
-        down_counter = 0
-        fluctuate_counter = 0
-        filteredData = study.loc[study['StudyArm'] == arm]
-        patientID = list(filteredData['PatientID'].unique())
-        amount_of_patients = len(list(filteredData['PatientID'].unique()))
-        
-        for patient in patientID:
-            filteredDataPatient = study.loc[study['PatientID'] == patient]
-            if len(filteredDataPatient) >= 2: #patients needs to have more than 2 datapoints
-                datapoints = list(filteredDataPatient['TargetLesionLongDiam_mm']) 
-                time = list(filteredDataPatient['TreatmentDay'])
-                
-                time = utils.convert_to_weeks(time)
-                datapoints = utils.clean_nonnumeric(datapoints, with_value = 0) #convert the mi
-                datapoints = [x for _,x in sorted(zip(time,datapoints))]
-                time.sort()
-                trend = p.detect_trend(datapoints)
-                 
-                if trend ==  'Up':
-                    up_counter +=1
-                elif trend == 'Down':
-                    down_counter +=1
-                elif trend == "Fluctuate":
-                    fluctuate_counter +=1
-        up_list.append(up_counter)
-        down_list.append(down_counter)
-        fluctuate_list.append(fluctuate_counter)
-        
-    X_axis = np.arange(len(study_arms))
-    
-    study_arms = [study_arm[8:] for study_arm in study_arms]
-    #X = [study.replace(f'{study_name}_', '') for study in X]
-    
-    plt.bar(X_axis - 0.2, up_list, 0.2, label = 'Up', color="red")
-    plt.bar(X_axis, down_list, 0.2, label = 'Down', color="green")
-    plt.bar(X_axis + 0.2, fluctuate_list, 0.2, label = 'Fluctuate', color="blue")
-    
-    plt.xticks(X_axis, study_arms)
-    plt.xlabel("Study Arms")
-    plt.ylabel("Number of occurences")
-    plt.title(f'Categories per Study Arm for {study_name}')
-    plt.legend()
-    plt.show()
+
     
 def fig_1E(studies):    
     first_datapoint_prediction = []
@@ -193,6 +178,7 @@ if __name__ == "__main__":
 
     processed_studies = pre.preprocess(studies)
     for name, study in zip(study_names, processed_studies):
-        plot_study_trend(name, study, amount=10)
+        plot_change_trend(name, study, amount=10)
+        plot_proportion_trend(name, study)
     # fig_1D(study_name='BIRCH', study=study_3)
     # fig_1E(studies)

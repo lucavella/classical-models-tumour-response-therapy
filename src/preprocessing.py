@@ -28,7 +28,7 @@ def clean_nonnumeric(vector, with_value=0):
 def preprocess(studies):
     for study in studies:
         # sort records by time per patient
-        study.sort_values(by=['PatientID', 'TreatmentDay'], inplace=True)
+        study.sort_values(by=['PatientID', 'TreatmentDay'], inplace=True, ignore_index=True)
 
         # extract study and arm nr
         study['StudyNr'] = \
