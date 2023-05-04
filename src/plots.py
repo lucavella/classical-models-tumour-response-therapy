@@ -1,40 +1,26 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-#import Utils as utils
 from matplotlib.lines import Line2D
-import math
-import extra_functions as ef
-import re 
 
-#read all the studies in a dataframe
+import utils
+import preprocessing as pre
+import fitting as fit
+
+
+
+# read all the studies as dataframes
 study_1 = pd.read_excel('./Original Paper/studies/Study1.xlsx') #FIR
 study_2 = pd.read_excel('./Original Paper/studies/Study2.xlsx') #POPLAR
 study_3 = pd.read_excel('./Original Paper/studies/Study3.xlsx') #BIRCH
 study_4 = pd.read_excel('./Original Paper/studies/Study4.xlsx') #OAK
 study_5 = pd.read_excel('./Original Paper/studies/Study5.xlsx') #IMvigor 210
-
-#list of the dataframes
 studies = [study_1, study_2, study_3, study_4,study_5]
-def calculate_patients():
-    patients_with_three_or_more_datapoints = 0
-    patients_with_six_or_more_datapoints = 0
 
-    #loop over all dataframes
-    for study in studies:
-        for patient in study['Patient_Anonmyized'].value_counts():
-            if patient >= 6:
-                patients_with_three_or_more_datapoints += 1
-                patients_with_six_or_more_datapoints += 1
-            elif patient >= 3:
-                patients_with_three_or_more_datapoints +=1
-            else:
-                print(patient)
-                
-    print(f'patients with three or more datapoints: {patients_with_three_or_more_datapoints}')
-    print(f'patients with six or more datapoints: {patients_with_six_or_more_datapoints}')
+processed_studies = preprocess(studies)
 
-#plot fig 1C 
+
+# plot fig 1C 
 #This plot is to show that all categories are present
 def fig_1C(studyname, study, amount_of_patients = 10):
     patientID = list(study['Patient_Anonmyized'].unique()) #get all unique patients in this study
@@ -49,12 +35,12 @@ def fig_1C(studyname, study, amount_of_patients = 10):
             datapoints = list(filteredData['TargetLesionLongDiam_mm']) 
             time = list(filteredData['Treatment_Day'])
 
-            time = ef.correct_time_vector(time, convertToWeek = True) #convert the days to weeks
-            datapoints = ef.clean_nonnumeric(datapoints, with_value = 0) #convert the missing values to zero
+            time = utils.correct_time_vector(time, convertToWeek = True) #convert the days to weeks
+            datapoints = utils.clean_nonnumeric(datapoints, with_value = 0) #convert the missing values to zero
 
             datapoints = [x for _,x in sorted(zip(time,datapoints))]
             time.sort()
-            trend = ef.detect_trend_of_data(datapoints)
+            trend = p.detect_trend(datapoints)
             print(trend)   
             new_dim = [datapoints[0]] * len(datapoints)
             change = [a_i - b_i for a_i, b_i in zip(datapoints, new_dim)]
@@ -111,11 +97,11 @@ def fig_1D(study_name ,study):
                 datapoints = list(filteredDataPatient['TargetLesionLongDiam_mm']) 
                 time = list(filteredDataPatient['Treatment_Day'])
                 
-                time = ef.correct_time_vector(time, convertToWeek = True) #convert the days to weeks
-                datapoints = ef.clean_nonnumeric(datapoints, with_value = 0) #convert the mi
+                time = utils.correct_time_vector(time, convertToWeek = True) #convert the days to weeks
+                datapoints = utils.clean_nonnumeric(datapoints, with_value = 0) #convert the mi
                 datapoints = [x for _,x in sorted(zip(time,datapoints))]
                 time.sort()
-                trend = ef.detect_trend_of_data(datapoints)
+                trend = p.detect_trend(datapoints)
                  
                 if trend ==  'Up':
                     up_counter +=1
@@ -175,22 +161,22 @@ def fig_1E(studies):
                         datapoints = list(filteredDataPatient['TargetLesionLongDiam_mm']) 
                         time = list(filteredDataPatient['Treatment_Day'])
 
-                        time = ef.correct_time_vector(time, convertToWeek = True) #convert the days to weeks
-                        datapoints = ef.clean_nonnumeric(datapoints, with_value = 0) #convert the mi
+                        time = utils.correct_time_vector(time, convertToWeek = True) #convert the days to weeks
+                        datapoints = utils.clean_nonnumeric(datapoints, with_value = 0) #convert the mi
                         datapoints = [x for _,x in sorted(zip(time,datapoints))]
                         time.sort()
-                        trend = ef.detect_trend_of_data(datapoints)
+                        trend = p.detect_trend(datapoints)
                         
                         #check for certain amount of datapoints
                         restricted_data_point = datapoints[0:idx + 1]
                         restricted_time = time[0:idx + 1]
-                        restricted_time = ef.correct_time_vector(restricted_time, convertToWeek = True)
+                        restricted_time = utils.correct_time_vector(restricted_time, convertToWeek = True)
                         
-                        restricted_data_point = ef.clean_nonnumeric(restricted_data_point, with_value = 0) #convert the mi
+                        restricted_data_point = utils.clean_nonnumeric(restricted_data_point, with_value = 0) #convert the mi
                         restricted_data_point = [x for _,x in sorted(zip(restricted_time,restricted_data_point))]
                         
                         restricted_time.sort()
-                        restricted_trend = ef.detect_trend_of_data(restricted_data_point)
+                        restricted_trend = p.detect_trend(restricted_data_point)
                         
                         #voorspelling is hetzelfde = true
                         if trend ==  restricted_trend:
