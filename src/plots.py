@@ -9,31 +9,20 @@ import fitting as fit
 
 
 
-# read all the studies as dataframes
-study_1 = pd.read_excel('./Original Paper/studies/Study1.xlsx') #FIR
-study_2 = pd.read_excel('./Original Paper/studies/Study2.xlsx') #POPLAR
-study_3 = pd.read_excel('./Original Paper/studies/Study3.xlsx') #BIRCH
-study_4 = pd.read_excel('./Original Paper/studies/Study4.xlsx') #OAK
-study_5 = pd.read_excel('./Original Paper/studies/Study5.xlsx') #IMvigor 210
-studies = [study_1, study_2, study_3, study_4,study_5]
-
-processed_studies = preprocess(studies)
-
-
 # plot fig 1C 
 #This plot is to show that all categories are present
 def fig_1C(studyname, study, amount_of_patients = 10):
-    patientID = list(study['Patient_Anonmyized'].unique()) #get all unique patients in this study
+    patientID = list(study['PatientID'].unique()) #get all unique patients in this study
     counter = 0 #used to iterate over the patients
     fig, ax = plt.subplots()
 
     while counter <= amount_of_patients:
         key = patientID[counter]
-        filteredData = study.loc[study['Patient_Anonmyized'] == key] #check data per patient
+        filteredData = study.loc[study['PatientID'] == key] #check data per patient
 
         if len(filteredData) >= 2: #patients needs to have more than 2 datapoints
             datapoints = list(filteredData['TargetLesionLongDiam_mm']) 
-            time = list(filteredData['Treatment_Day'])
+            time = list(filteredData['TreatmentDay'])
 
             time = utils.convert_to_weeks(time)
             datapoints = utils.clean_nonnumeric(datapoints, with_value = 0) #convert the missing values to zero
@@ -77,7 +66,7 @@ def fig_1C(studyname, study, amount_of_patients = 10):
 #We used a barchart instead of a nested pie chart for readability
 #this plot is used to show the distribution of RECIST outcomes per patient arm of a study.
 def fig_1D(study_name ,study):
-    study_arms = list(study['Study_Arm'].unique()) #get all subgroups of patients
+    study_arms = list(study['StudyArm'].unique()) #get all subgroups of patients
     
     up_list = []
     down_list = []
@@ -87,15 +76,15 @@ def fig_1D(study_name ,study):
         up_counter = 0
         down_counter = 0
         fluctuate_counter = 0
-        filteredData = study.loc[study['Study_Arm'] == arm]
-        patientID = list(filteredData['Patient_Anonmyized'].unique())
-        amount_of_patients = len(list(filteredData['Patient_Anonmyized'].unique()))
+        filteredData = study.loc[study['StudyArm'] == arm]
+        patientID = list(filteredData['PatientID'].unique())
+        amount_of_patients = len(list(filteredData['PatientID'].unique()))
         
         for patient in patientID:
-            filteredDataPatient = study.loc[study['Patient_Anonmyized'] == patient]
+            filteredDataPatient = study.loc[study['PatientID'] == patient]
             if len(filteredDataPatient) >= 2: #patients needs to have more than 2 datapoints
                 datapoints = list(filteredDataPatient['TargetLesionLongDiam_mm']) 
-                time = list(filteredDataPatient['Treatment_Day'])
+                time = list(filteredDataPatient['TreatmentDay'])
                 
                 time = utils.convert_to_weeks(time)
                 datapoints = utils.clean_nonnumeric(datapoints, with_value = 0) #convert the mi
@@ -136,12 +125,12 @@ def fig_1E(studies):
     fourth_datapoint_prediction = []
     
     for study in studies:
-        study_arms = list(study['Study_Arm'].unique())
+        study_arms = list(study['StudyArm'].unique())
         for arm in study_arms:
             counter = 0
-            filteredData = study.loc[study['Study_Arm'] == arm]
-            patientIDs = list(filteredData['Patient_Anonmyized'].unique())
-            amount_of_patients = len(list(filteredData['Patient_Anonmyized'].unique()))
+            filteredData = study.loc[study['StudyArm'] == arm]
+            patientIDs = list(filteredData['PatientID'].unique())
+            amount_of_patients = len(list(filteredData['PatientID'].unique()))
             
             #true en falses bijhouden van de correcte voorspellingen
             first_point = []
@@ -153,13 +142,13 @@ def fig_1E(studies):
             #patienten aflopen in de study arm
             while counter < amount_of_patients:
                 key = patientIDs[counter]
-                filteredDataPatient = study.loc[study['Patient_Anonmyized'] == key]
+                filteredDataPatient = study.loc[study['PatientID'] == key]
                 
                 #voor elk amount of datapoints de voorspelling doen
                 for idx, point in enumerate(X):
                     if len(filteredDataPatient) >= idx + 1:
                         datapoints = list(filteredDataPatient['TargetLesionLongDiam_mm']) 
-                        time = list(filteredDataPatient['Treatment_Day'])
+                        time = list(filteredDataPatient['TreatmentDay'])
 
                         time = utils.convert_to_weeks(time)
                         datapoints = utils.clean_nonnumeric(datapoints, with_value = 0) #convert the mi
@@ -205,7 +194,17 @@ def fig_1E(studies):
     plt.show()
 
 if __name__ == "__main__":
-    calculate_patients()
+    # read all the studies as dataframes
+    study_1 = pd.read_excel('./Original Paper/studies/Study1.xlsx') #FIR
+    study_2 = pd.read_excel('./Original Paper/studies/Study2.xlsx') #POPLAR
+    study_3 = pd.read_excel('./Original Paper/studies/Study3.xlsx') #BIRCH
+    study_4 = pd.read_excel('./Original Paper/studies/Study4.xlsx') #OAK
+    study_5 = pd.read_excel('./Original Paper/studies/Study5.xlsx') #IMvigor 210
+    studies = [study_1, study_2, study_3, study_4,study_5]
+
+    processed_studies = preprocess(studies)
+
+
     fig_1C(studyname="FIR", study=study_1, amount_of_patients = 10)
     fig_1C(studyname="POPLAR", study=study_2, amount_of_patients = 10)
     fig_1C(studyname="BIRCH", study=study_3, amount_of_patients = 100)

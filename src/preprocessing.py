@@ -10,7 +10,7 @@ import utils
 def check_patient_overlap(studies):
     for study1, study2 in it.combinations(studies, 2):
         # pairwise inner join to check if empty
-        if study1.join(study2, on='Patient_Anonmyized', rsuffix='_2', how='inner').size > 0:
+        if study1.join(study2, on='PatientID', rsuffix='_2', how='inner').size > 0:
             return True
     return False
 
@@ -33,12 +33,12 @@ def preprocess(studies):
     # normalize tumor volume to range of [0,1]
     min_tv = studies['TumorVolume_mm3'].min()
     max_tv = studies['TumorVolume_mm3'].max()
-    studies['TumorVolume_Norm'] = studies['TumorVolume_mm3'].apply(lambda tv: (tv - min_tv) / (max_tv - min_tv))
+    studies['TumorVolumeNorm'] = studies['TumorVolume_mm3'].apply(lambda tv: (tv - min_tv) / (max_tv - min_tv))
 
     # extract study and arm nr
-    studies['StudyNr'] = studies['Study_Arm'].apply(lambda saTxt: int(saTxt[6]))
-    studies['Arm'] = studies['Study_Arm'].apply(lambda saTxt: int(saTxt[-1]))
-    studies.drop('Study_Arm', axis=1, inplace=True)
+    studies['StudyNr'] = studies['StudyArm'].apply(lambda saTxt: int(saTxt[6]))
+    studies['Arm'] = studies['StudyArm'].apply(lambda saTxt: int(saTxt[-1]))
+    studies.drop('StudyArm', axis=1, inplace=True)
 
     return studies
 
@@ -47,8 +47,8 @@ def preprocess(studies):
 # input: joint dataframe of all studies, like the output of 'preprocess'
 # output: dataframe with data points of patients with 'i' or more data points
 def get_at_least(studies, i):
-    return studies.groupby('Patient_Anonmyized') \
-                  .filter(lambda group: group['Patient_Anonmyized'].count() >= i)
+    return studies.groupby('PatientID') \
+                  .filter(lambda group: group['PatientID'].count() >= i)
 
 
 if __name__ == '__main__':
