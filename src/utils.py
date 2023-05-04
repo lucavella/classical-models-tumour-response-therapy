@@ -4,26 +4,18 @@ import numpy as np
 
 
 
-class Trend(Enum):
-    UP = 1
-    DOWN = 2
-    FLUCTUATE = 3
+# converts the time (days) to weeks
+# e.g if the day 227 => week 33
+# input: time vector in days
+# output: time vector in weeks
+def convert_to_weeks(time):
+    return [math.ceil(i/7) for i in time]
 
 
-#converts the time to weeks
-#e.g if the value is 227, this will return 33 since it happend in the 33th week of treatment
-def correct_time_vector(time, convertToWeek = True):
-    if convertToWeek:
-        #days are converted to in which week they occured
-        time = [math.ceil(i/7) for i in time]
-        #if the value is negative, make it 0.1, otherwise keep the correct week
-        time = [0.1 if i<=0 else i for i in time]
-    else:
-        time = [0.1 if i<=0 else i for i in time]
-    return time
-
-#if a value is not numeric, convert it to 'with_value'
-def clean_nonnumeric(vector, with_value):
+# if a value in vector not numeric, replace it to "with_value"
+# input: vector
+# output: numeric vector
+def clean_nonnumeric(vector, with_value=0):
     #predicate to check if string is an integer
     def is_number(string):
         try:
@@ -63,3 +55,10 @@ def detect_trend(vector):
     # FLUCTUATE else
     else:
         return Trend.FLUCTUATE
+
+
+# Trend enum
+class Trend(Enum):
+    UP = 1
+    DOWN = 2
+    FLUCTUATE = 3

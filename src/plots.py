@@ -35,7 +35,7 @@ def fig_1C(studyname, study, amount_of_patients = 10):
             datapoints = list(filteredData['TargetLesionLongDiam_mm']) 
             time = list(filteredData['Treatment_Day'])
 
-            time = utils.correct_time_vector(time, convertToWeek = True) #convert the days to weeks
+            time = utils.convert_to_weeks(time)
             datapoints = utils.clean_nonnumeric(datapoints, with_value = 0) #convert the missing values to zero
 
             datapoints = [x for _,x in sorted(zip(time,datapoints))]
@@ -97,7 +97,7 @@ def fig_1D(study_name ,study):
                 datapoints = list(filteredDataPatient['TargetLesionLongDiam_mm']) 
                 time = list(filteredDataPatient['Treatment_Day'])
                 
-                time = utils.correct_time_vector(time, convertToWeek = True) #convert the days to weeks
+                time = utils.convert_to_weeks(time)
                 datapoints = utils.clean_nonnumeric(datapoints, with_value = 0) #convert the mi
                 datapoints = [x for _,x in sorted(zip(time,datapoints))]
                 time.sort()
@@ -161,7 +161,7 @@ def fig_1E(studies):
                         datapoints = list(filteredDataPatient['TargetLesionLongDiam_mm']) 
                         time = list(filteredDataPatient['Treatment_Day'])
 
-                        time = utils.correct_time_vector(time, convertToWeek = True) #convert the days to weeks
+                        time = utils.convert_to_weeks(time)
                         datapoints = utils.clean_nonnumeric(datapoints, with_value = 0) #convert the mi
                         datapoints = [x for _,x in sorted(zip(time,datapoints))]
                         time.sort()
@@ -170,7 +170,7 @@ def fig_1E(studies):
                         #check for certain amount of datapoints
                         restricted_data_point = datapoints[0:idx + 1]
                         restricted_time = time[0:idx + 1]
-                        restricted_time = utils.correct_time_vector(restricted_time, convertToWeek = True)
+                        restricted_time = utils.convert_to_weeks(restricted_time)
                         
                         restricted_data_point = utils.clean_nonnumeric(restricted_data_point, with_value = 0) #convert the mi
                         restricted_data_point = [x for _,x in sorted(zip(restricted_time,restricted_data_point))]
