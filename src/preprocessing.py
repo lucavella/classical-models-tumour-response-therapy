@@ -1,6 +1,6 @@
 import pandas as pd
 import itertools as it
-import extra_functions as ef
+import utils
 
 
 
@@ -21,7 +21,7 @@ def check_patient_overlap(studies):
 def preprocess(studies):
     for study in studies:
         # set nonnumeric values to 0
-        study['TargetLesionLongDiam_mm'] = ef.clean_nonnumeric(study['TargetLesionLongDiam_mm'], with_value=0)
+        study['TargetLesionLongDiam_mm'] = utils.clean_nonnumeric(study['TargetLesionLongDiam_mm'], with_value=0)
         study['TargetLesionLongDiam_mm'].astype('float')
 
         # calculate tumor volume using formula

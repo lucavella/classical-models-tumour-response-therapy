@@ -1,12 +1,13 @@
 import math
 from enum import Enum
+import numpy as np
 
 
 
 class Trend(Enum):
-    UP
-    Down
-    FLUCTUATE
+    UP = 1
+    DOWN = 2
+    FLUCTUATE = 3
 
 
 #converts the time to weeks
@@ -47,18 +48,18 @@ def detect_trend(vector):
 
     # get sum of positive and negative differences
     pos = np.sum(
-        np.clip(diff_v, a_min=0)
+        np.clip(diff_v, a_min=0, a_max=None)
     )
     neg = - np.sum(
-        np.clip(diff_v, a_max=0)
+        np.clip(diff_v, a_min=None, a_max=0)
     )
     
     # UP if strictly positive or sum of positive to sum of negative rate is > 2
     if (neg == 0) or (pos / neg > 2):
-        return UP
+        return Trend.UP
     # DOWN if strictly negative or sum of negative to sum of positive rate is > 2
     elif (pos == 0) or (neg / pos > 2):
-        return DOWN
+        return Trend.DOWN
     # FLUCTUATE else
-    else
-        return FLUCTUATE
+    else:
+        return Trend.FLUCTUATE
