@@ -9,56 +9,46 @@ import fitting as fit
 
 
 
-# plot fig 1C 
-#This plot is to show that all categories are present
-def fig_1C(studyname, study, amount_of_patients = 10):
-    patientID = list(study['PatientID'].unique()) #get all unique patients in this study
-    counter = 0 #used to iterate over the patients
+# plot the change in LD from baseline for given study
+# corresponds to figure 1C
+def plot_study_trend(name, study, amount=10):
+    study = utils.get_at_least(study, 2) # patients need >= 2 data points
     fig, ax = plt.subplots()
+    
+    # take up to "amount" patients from study
+    for patient in study['PatientID'].unique()[:amount]:
+        # get LD and treatment week from dataframe for patient
+        patient_data = study.loc[study['PatientID'] == patient]
+        ld_data = np.array(patient_data['TargetLesionLongDiam_mm'])
+        time = utils.convert_to_weeks(patient_data['TreatmentDay'])
 
-    while counter <= amount_of_patients:
-        key = patientID[counter]
-        filteredData = study.loc[study['PatientID'] == key] #check data per patient
+        # get trend for color and LD deltas
+        trend = utils.detect_trend(ld_data)
+        ld_delta = ld_data - ld_data[0] # change in LD from first measurement
+        time_delta = np.array(time) - time[0] # start with time is 0
+        
+        ax.plot(
+            time_delta,
+            ld_delta,
+            marker='o',
+            markeredgewidth=3,
+            linewidth=2,
+            color=trend.color()
+        )
 
-        if len(filteredData) >= 2: #patients needs to have more than 2 datapoints
-            datapoints = list(filteredData['TargetLesionLongDiam_mm']) 
-            time = list(filteredData['TreatmentDay'])
+    # create plot labels, legend, ...
+    plt.axhline(y=0, linestyle=':', color='black')
+    plt.xlabel('Time (weeks)', fontsize=16)
+    plt.ylabel('Change in  LD From Baseline(mm)', fontsize=16)
+    plt.title(name, fontsize=24)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
 
-            time = utils.convert_to_weeks(time)
-            datapoints = utils.clean_nonnumeric(datapoints, with_value = 0) #convert the missing values to zero
-
-            datapoints = [x for _,x in sorted(zip(time,datapoints))]
-            time.sort()
-            trend = p.detect_trend(datapoints)
-            print(trend)   
-            new_dim = [datapoints[0]] * len(datapoints)
-            change = [a_i - b_i for a_i, b_i in zip(datapoints, new_dim)]
-
-            if trend ==  'Up':
-                ax.plot(time, change, marker='o', markeredgewidth = 3, linewidth = 2, color='#d73027')
-            elif trend == 'Down':
-                ax.plot(time, change, marker='o', markeredgewidth = 3, linewidth = 2, color='#1a9850')
-            elif trend == "Fluctuate":
-                ax.plot(time, change, marker='o', markeredgewidth = 3, linewidth = 2, color='#313695')
-        counter += 1
-
-    #create the plot
-    plt.axhline(0, linestyle = '--', color='black')
-    plt.xlabel('Time (weeks)', fontsize = 16)
-    plt.ylabel('Change in  LD From Baseline(mm)', fontsize = 16)
-    plt.title(studyname, fontsize = 16)
-    plt.xticks(fontsize = 16)
-    plt.yticks(fontsize = 16)
-
-    custom_lines = [Line2D([0], [0], color='#d73027', lw=4),
-                    Line2D([0], [0], color='#1a9850', lw=4),
-                    Line2D([0], [0], color='#313695', lw=4)]
-
-    ax.legend(custom_lines, ['Up', 'Down', 'Fluctuate'], fontsize = 12)
-
-    ax.set_aspect(1.0/ax.get_data_ratio(), adjustable='box')
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+    ax.legend(
+        [Line2D([0], [0], color=trend.color(), lw=4) for trend in utils.Trend], 
+        [trend.name for trend in utils.Trend], 
+        fontsize=12
+    )
 
     plt.show()
     
@@ -195,25 +185,14 @@ def fig_1E(studies):
 
 if __name__ == "__main__":
     # read all the studies as dataframes
-    study_1 = pd.read_excel('./Original Paper/studies/Study1.xlsx') #FIR
-    study_2 = pd.read_excel('./Original Paper/studies/Study2.xlsx') #POPLAR
-    study_3 = pd.read_excel('./Original Paper/studies/Study3.xlsx') #BIRCH
-    study_4 = pd.read_excel('./Original Paper/studies/Study4.xlsx') #OAK
-    study_5 = pd.read_excel('./Original Paper/studies/Study5.xlsx') #IMvigor 210
-    studies = [study_1, study_2, study_3, study_4,study_5]
+    studies = [
+        pd.read_excel(f'./data/study{i}.xlsx')
+        for i in range(1, 6)
+    ]
+    study_names = ["FIR", "POPULAR", "BIRCH", "OAK", "IMvigor 210"]
 
-    processed_studies = preprocess(studies)
-
-
-    fig_1C(studyname="FIR", study=study_1, amount_of_patients = 10)
-    fig_1C(studyname="POPLAR", study=study_2, amount_of_patients = 10)
-    fig_1C(studyname="BIRCH", study=study_3, amount_of_patients = 100)
-    fig_1C(studyname="OAK", study=study_4, amount_of_patients = 10)
-    fig_1C(studyname="IMvigor 210", study=study_5, amount_of_patients = 10)
-    fig_1D(study_name='BIRCH', study=study_3)
-    fig_1E(studies)
-        
-    
-
-
-
+    processed_studies = pre.preprocess(studies)
+    for name, study in zip(study_names, processed_studies):
+        plot_study_trend(name, study, amount=10)
+    # fig_1D(study_name='BIRCH', study=study_3)
+    # fig_1E(studies)

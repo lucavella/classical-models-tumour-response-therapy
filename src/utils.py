@@ -32,6 +32,17 @@ def convert_to_weeks(time):
 
 
 # Trend enum
+class Trend(Enum):
+    UP = 1
+    DOWN = 2
+    FLUCTUATE = 3
+    def color(self):
+        if self == Trend.UP:
+            return '#d73027'
+        elif self == Trend.DOWN:
+            return '#1a9850'
+        elif self == Trend.FLUCTUATE:
+            return '#313695'
 
 
 # detect if the trend of LD data is going, up, down or fluctuates
@@ -60,10 +71,3 @@ def detect_trend(vector):
     # FLUCTUATE else
     else:
         return Trend.FLUCTUATE
-
-
-# Trend enum
-class Trend(Enum):
-    UP = 1
-    DOWN = 2
-    FLUCTUATE = 3
