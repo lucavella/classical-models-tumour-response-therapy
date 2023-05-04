@@ -1,18 +1,25 @@
 import pandas as pd
+import math
 import itertools as it
 import utils
 
 
 
-# pairwise check if patient ID is reused across studies
-# input: list of studies as dataframes
-# output: False if the patient ID's are disjoint, True otherwise
-def check_patient_overlap(studies):
-    for study1, study2 in it.combinations(studies, 2):
-        # pairwise inner join to check if empty
-        if study1.join(study2, on='PatientID', rsuffix='_2', how='inner').size > 0:
-            return True
-    return False
+# if a value in vector not numeric, replace it to "with_value"
+# input: vector
+# output: numeric vector
+def clean_nonnumeric(vector, with_value=0):
+    #predicate to check if string is an integer
+    def is_number(string):
+        try:
+            return not math.isnan(float(string))
+        except ValueError:
+            return False
+
+    return [
+        i if is_number(i) else with_value
+        for i in vector
+    ]
 
 
 # perform preprocessing as described in paper
@@ -20,6 +27,9 @@ def check_patient_overlap(studies):
 # output: combined preprocessed dataframe
 def preprocess(studies):
     for study in studies:
+        # sort records by time per patient
+        study.sort_values(by=['PatientID', 'TreatmentDay'], inplace=True)
+
         # extract study and arm nr
         study['StudyNr'] = \
             study['StudyArm'].apply(lambda saTxt: int(saTxt[6]))
@@ -29,7 +39,7 @@ def preprocess(studies):
 
         # set nonnumeric values to 0
         study['TargetLesionLongDiam_mm'] = \
-            utils.clean_nonnumeric(study['TargetLesionLongDiam_mm'], with_value=0)
+            clean_nonnumeric(study['TargetLesionLongDiam_mm'], with_value=0)
         study['TargetLesionLongDiam_mm'].astype('float')
 
         # calculate tumor volume using formula
@@ -50,14 +60,6 @@ def preprocess(studies):
             study['TumorVolume_mm3'].apply(lambda tv: (tv - min_tv) / (max_tv - min_tv))
 
     return studies
-
-
-# get all records of patients with 'i' or more data points
-# input: joint dataframe of all studies, like the output of 'preprocess'
-# output: dataframe with data points of patients with 'i' or more data points
-def get_at_least(studies, i):
-    return studies.groupby('PatientID') \
-                  .filter(lambda group: group['PatientID'].count() >= i)
 
 
 if __name__ == '__main__':

@@ -4,9 +4,6 @@ from scipy import optimize as scopt
 
 
 def fitted_model(model, t, tv):
-    # pairwise sort of time and tumor volume
-    st, stv = zip(*sorted(zip(t, tv)))
-    
     # returns sum of squared errors of model, given model parameters
     def model_sse(params):
         pred_stv = model.predict(st, *params)

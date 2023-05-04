@@ -4,6 +4,25 @@ import numpy as np
 
 
 
+# get all records of patients with 'i' or more data points
+# input: joint dataframe of all studies, like the output of 'preprocess'
+# output: dataframe with data points of patients with 'i' or more data points
+def get_at_least(studies, i):
+    return studies.groupby('PatientID') \
+                  .filter(lambda group: group['PatientID'].count() >= i)
+
+
+# pairwise check if patient ID is reused across studies
+# input: list of studies as dataframes
+# output: False if the patient ID's are disjoint, True otherwise
+def check_patient_overlap(studies):
+    for study1, study2 in it.combinations(studies, 2):
+        # pairwise inner join to check if empty
+        if study1.join(study2, on='PatientID', rsuffix='_2', how='inner').size > 0:
+            return True
+    return False
+
+
 # converts the time (days) to weeks
 # e.g if the day 227 => week 33
 # input: time vector in days
@@ -12,21 +31,7 @@ def convert_to_weeks(time):
     return [math.ceil(i/7) for i in time]
 
 
-# if a value in vector not numeric, replace it to "with_value"
-# input: vector
-# output: numeric vector
-def clean_nonnumeric(vector, with_value=0):
-    #predicate to check if string is an integer
-    def is_number(string):
-        try:
-            return not math.isnan(float(string))
-        except ValueError:
-            return False
-
-    return [
-        i if is_number(i) else with_value
-        for i in vector
-    ]
+# Trend enum
 
 
 # detect if the trend of LD data is going, up, down or fluctuates
