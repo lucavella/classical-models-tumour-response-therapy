@@ -4,6 +4,7 @@ import itertools as it
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
+import models
 import utils
 import preprocessing as pre
 import fitting as fit
@@ -72,7 +73,11 @@ def plot_proportion_trend(name, study):
     # plot for each trend
     width = 0.2
     n_trends = len(utils.Trend)
-    offsets = np.linspace(width / 2 - n_trends / 10, - width / 2 + n_trends / 10, num=n_trends) # calculate bar offsets
+    offsets = np.linspace( # calculate bar offsets
+        width / 2 - n_trends / 10, # min offset
+         - width / 2 + n_trends / 10, # max offset
+         num=n_trends
+    )
     for trend, offset in zip(utils.Trend, offsets):
         # get count for each arm and plot
         trend_count = trend_counts.loc[pd.IndexSlice[:, trend]]
@@ -86,8 +91,8 @@ def plot_proportion_trend(name, study):
     
     # create plot
     plt.xticks(arms)
-    plt.xlabel("Study arms", fontsize=16)
-    plt.ylabel("Number of occurences", fontsize=16)
+    plt.xlabel('Study arms', fontsize=16)
+    plt.ylabel('Number of occurences', fontsize=16)
     plt.title(f'Trend categories per Study Arm for {name}', fontsize=24)
     plt.xticks(fontsize=16)
     plt.yticks(fontsize=16)
@@ -97,7 +102,7 @@ def plot_proportion_trend(name, study):
   
 # plot the proportions of correct trends predictions based on 2 to "up_to" data points per study and arm
 # corresponds to figure 1E
-def plot_proportion_correct_trend(studies, up_to=5):
+def plot_correct_predictions(studies, up_to=5):
     amount_points = range(2, up_to + 1) # always at least 2 points
     merged_studies = pd.concat(studies, ignore_index=True)
 
@@ -121,7 +126,7 @@ def plot_proportion_correct_trend(studies, up_to=5):
         for i in amount_points
     ]
 
-    # creating plot
+    # create plot
     plt.boxplot(data, positions=amount_points)
     plt.xlabel('Amount of first data points used to predict', fontsize=16)
     plt.ylabel('Proportion of correct predictions', fontsize=16)
@@ -129,6 +134,35 @@ def plot_proportion_correct_trend(studies, up_to=5):
     plt.xticks(fontsize=16)
     plt.yticks(fontsize=16)
     plt.show()
+
+
+# plot actual vs predicted normalized tumor volume values
+# corresponds to figure 2C
+def plot_actual_fitted(name, study, model, log_scale=False):
+    # fit and predict model function per patient
+    predicted = study.groupby('PatientID') \
+                     .apply(lambda p: \
+                         pd.Series(fit.fitted_model(
+                             model, 
+                             p['TreatmentDay'], 
+                             p['TumorVolumeNorm']
+                         )(p['TreatmentDay']))
+                     )
+    
+    # create plot
+    plt.scatter(study['TumorVolumeNorm'], predicted)
+    plt.axline((0, 0), slope=1, linestyle=':', color='black')
+    if log_scale:
+        plt.xscale('log')
+        plt.yscale('log')
+    plt.xlabel('Actual normalized tumor volume', fontsize=16)
+    plt.ylabel('Predicted normalized tumor volume', fontsize=16)
+    plt.title(f'Actual vs predicted values\nStudy: {name}, Model: {model.__name__}', fontsize=24)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(fontsize=16)
+    plt.show()
+
 
 
 if __name__ == "__main__":
@@ -145,4 +179,6 @@ if __name__ == "__main__":
         plot_change_trend(name, study, amount=10)
         plot_proportion_trend(name, study)
 
-    plot_proportion_correct_trend(processed_studies)
+    plot_correct_predictions(processed_studies)
+
+    plot_actual_fitted(study_names[3], studies[3], models.Exponential)
