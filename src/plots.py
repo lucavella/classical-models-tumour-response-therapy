@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import math
 import itertools as it
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
@@ -43,8 +44,6 @@ def plot_change_trend(name, study, amount=10):
     plt.xlabel('Time (weeks)', fontsize=16)
     plt.ylabel('Change in LD from baseline (mm)', fontsize=16)
     plt.title(f'Change in LD and trend per patient for {name}', fontsize=24)
-    plt.xticks(fontsize=16)
-    plt.yticks(fontsize=16)
     ax.legend(
         [Line2D([0], [0], color=trend.color(), lw=4) for trend in utils.Trend], 
         [trend.name for trend in utils.Trend], 
@@ -94,8 +93,6 @@ def plot_proportion_trend(name, study):
     plt.xlabel('Study arms', fontsize=16)
     plt.ylabel('Number of occurences', fontsize=16)
     plt.title(f'Trend categories per Study Arm for {name}', fontsize=24)
-    plt.xticks(fontsize=16)
-    plt.yticks(fontsize=16)
     plt.legend(fontsize=16)
     plt.show()
 
@@ -131,36 +128,55 @@ def plot_correct_predictions(studies, up_to=5):
     plt.xlabel('Amount of first data points used to predict', fontsize=16)
     plt.ylabel('Proportion of correct predictions', fontsize=16)
     plt.title(f'Proportion of correct trend prediction with 2 up to {up_to} data points', fontsize=24)
-    plt.xticks(fontsize=16)
-    plt.yticks(fontsize=16)
     plt.show()
 
 
 # plot actual vs predicted normalized tumor volume values
 # corresponds to figure 2C
-def plot_actual_fitted(name, study, model, log_scale=False):
-    # fit and predict model function per patient
-    predicted = study.groupby('PatientID') \
-                     .apply(lambda p: \
-                         pd.Series(fit.fitted_model(
-                             model, 
-                             p['TreatmentDay'], 
-                             p['TumorVolumeNorm']
-                         )(p['TreatmentDay']))
-                     )
-    
-    # create plot
-    plt.scatter(study['TumorVolumeNorm'], predicted)
-    plt.axline((0, 0), slope=1, linestyle=':', color='black')
-    if log_scale:
-        plt.xscale('log')
-        plt.yscale('log')
-    plt.xlabel('Actual normalized tumor volume', fontsize=16)
-    plt.ylabel('Predicted normalized tumor volume', fontsize=16)
-    plt.title(f'Actual vs predicted values\nStudy: {name}, Model: {model.__name__}', fontsize=24)
-    plt.xticks(fontsize=16)
-    plt.yticks(fontsize=16)
-    plt.legend(fontsize=16)
+def plot_actual_fitted(study_names, studies, models, log_scale=False):
+    # fit model to patient data and predict
+    def fit_and_predict(model, patient):
+        try:
+            return pd.Series(
+                fit.fitted_model(
+                    model, 
+                    patient['TreatmentDay'], 
+                    patient['TumorVolumeNorm']
+                )(patient['TreatmentDay'])
+            )
+
+        # not ideal, multiple errors possible:
+        # curve_fit, ValueError: Residuals are not finite in the initial point
+        # curve_fit, RuntimeError: Optimal parameters not found: The maximum number of function evaluations is exceeded
+        # multiple warnings possible:
+        # curve_fit, OptimizeWarning: Covariance of the parameters could not be estimated
+        # numpy, RuntimeWarning: overflow encountered in multiply x = um.multiply(x, x, out=x)
+        # odeint: ODEintWarning: Excess accuracy requested (tolerances too small)
+        # odeint: ODEintWarning: Excess work done on this call (perhaps wrong Dfun type)
+        # odeint: lsoda--  at t (=r1), too much accuracy requested for precision of machine
+        except:
+            # return NaN predictions
+            return pd.Series([math.nan] * len(patient))
+
+    fig, axs = plt.subplots(len(studies), len(models))
+
+    for i, (study, name) in enumerate(zip(studies, study_names)):
+        for j, model in enumerate(models):
+            # fit and predict model function per patient
+            predicted = study.groupby('PatientID') \
+                             .apply(lambda p: fit_and_predict(model, p))
+
+            # create subplot
+            axs[i, j].scatter(study['TumorVolumeNorm'], predicted)
+            axs[i, j].axline((0, 0), slope=1, linestyle=':', color='black')
+            if log_scale:
+                axs[i, j].set_xscale('log')
+                axs[i, j].set_yscale('log')
+            axs[i, j].set_xlabel('Actual normalized tumor volume', fontsize=16)
+            axs[i, j].set_ylabel('Predicted normalized tumor volume', fontsize=16)
+            axs[i, j].set_title(f'Study: {name}, Model: {model.__name__}', fontsize=16)
+
+    plt.title(f'Actual vs predicted normalized tumor volumes', fontsize=24)
     plt.show()
 
 
@@ -172,13 +188,21 @@ if __name__ == "__main__":
         for i in range(1, 6)
     ]
     study_names = ["FIR", "POPULAR", "BIRCH", "OAK", "IMvigor 210"]
+    models = [
+        models.Exponential,
+        models.LogisticVerhulst,
+        models.Gompertz,
+        models.GeneralGompertz,
+        models.ClassicBertalanffy,
+        models.GeneralBertalanffy
+    ]
 
     processed_studies = pre.preprocess(studies)
 
-    for name, study in zip(study_names, processed_studies):
-        plot_change_trend(name, study, amount=10)
-        plot_proportion_trend(name, study)
+    # for name, study in zip(study_names, processed_studies):
+    #     plot_change_trend(name, study, amount=10)
+    #     plot_proportion_trend(name, study)
 
-    plot_correct_predictions(processed_studies)
+    # plot_correct_predictions(processed_studies)
 
-    plot_actual_fitted(study_names[3], studies[3], models.Exponential)
+    plot_actual_fitted(study_names, studies, models)

@@ -8,6 +8,8 @@
 
 * By comparing Table 1 and Fig 1D we can see that the author messed up the labeling of the studies. This creates an unreadable effect and makes it hard to understand which data belongs to which study.
 
+* Figure 2C: log scales, but data is normalized linearly. Should data be normalized logarithmically to fit more accurate for small values?
+
 ## Code
 https://github.com/KatherLab/ImmunotherapyModels/blob/main/FitFunctions.py
 * `FitFunctions.py:36` `dim**2/3` -> `dim**(2/3)`
