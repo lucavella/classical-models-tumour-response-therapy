@@ -5,16 +5,16 @@ import numpy as np
 
 
 # get all records of patients with 'i' or more data points
-# input: joint dataframe of all studies, like the output of 'preprocess'
-# output: dataframe with data points of patients with 'i' or more data points
+# params: joint dataframe of all studies, like the output of 'preprocess'
+# return: dataframe with data points of patients with 'i' or more data points
 def get_at_least(studies, i):
     return studies.groupby('PatientID') \
                   .filter(lambda group: group['PatientID'].count() >= i)
 
 
 # pairwise check if patient ID is reused across studies
-# input: list of studies as dataframes
-# output: False if the patient ID's are disjoint, True otherwise
+# params: list of studies as dataframes
+# return: False if the patient ID's are disjoint, True otherwise
 def check_patient_overlap(studies):
     for study1, study2 in it.combinations(studies, 2):
         # pairwise inner join to check if empty
@@ -25,8 +25,8 @@ def check_patient_overlap(studies):
 
 # converts the time (days) to weeks
 # e.g if the day 227 => week 33
-# input: time vector in days
-# output: time vector in weeks
+# params: time vector in days
+# return: time vector in weeks
 def convert_to_weeks(time):
     return [math.ceil(i/7) for i in time]
 
@@ -51,8 +51,8 @@ class Trend(Enum):
 
 # detect if the trend of LD data is going, up, down or fluctuates
 # based on paper section "Patient categorization according to RECIST and trajectory type"
-# input: data point vector
-# output: trend enum
+# params: data point vector
+# return: trend enum
 def detect_trend(vector):
     # get difference vector
     v = np.array(vector)

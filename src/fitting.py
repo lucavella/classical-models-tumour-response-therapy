@@ -3,6 +3,9 @@ from scipy import optimize as scopt
 
 
 
+# searches the best parameters for a given model class, over 
+# params: model class (see models.py), time vector, normalized tumor volume vector
+# return: fitted function using optimal parameters
 def fitted_model(model, t, tv):
     # returns sum of squared errors of model, given model parameters
     def model_sse(params):

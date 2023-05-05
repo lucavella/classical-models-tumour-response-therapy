@@ -6,8 +6,8 @@ import utils
 
 
 # if a value in vector not numeric, replace it to "with_value"
-# input: vector
-# output: numeric vector
+# params: vector
+# return: numeric vector
 def clean_nonnumeric(vector, with_value=0):
     #predicate to check if string is an integer
     def is_number(string):
@@ -23,8 +23,8 @@ def clean_nonnumeric(vector, with_value=0):
 
 
 # perform preprocessing as described in paper
-# input: list of studies as dataframes
-# output: combined preprocessed dataframe
+# params: list of studies as dataframes
+# return: combined preprocessed dataframe
 def preprocess(studies):
     for study in studies:
         # sort records by time per patient
