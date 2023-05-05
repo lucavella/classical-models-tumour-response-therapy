@@ -60,17 +60,3 @@ def preprocess(studies):
             study['TumorVolume_mm3'].apply(lambda tv: (tv - min_tv) / (max_tv - min_tv))
 
     return studies
-
-
-if __name__ == '__main__':
-    study1 = pd.read_excel('../Original Paper/studies/Study1.xlsx')
-    study2 = pd.read_excel('../Original Paper/studies/Study2.xlsx')
-    study3 = pd.read_excel('../Original Paper/studies/Study3.xlsx')
-    study4 = pd.read_excel('../Original Paper/studies/Study4.xlsx')
-    study5 = pd.read_excel('../Original Paper/studies/Study5.xlsx')
-    studies = [study1, study2, study3, study4, study5]
-    
-    print('Patient ID overlap across studies:', check_patient_overlap(studies))
-    preprocessed = preprocess(studies)
-    print(preprocessed)
-    print(get_at_least(preprocessed, 6))

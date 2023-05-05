@@ -24,7 +24,7 @@ def fitted_model(model, t, tv):
     bounds_t = zip(*model.bounds) # transpose
     fitted_params, cov_params = scopt.curve_fit(
         model.predict,          # function to fit
-        t,                      # times
+        t,                      # time
         tv,                     # tumor volumes
         initial_params,         # initial guess
         bounds=tuple(bounds_t), # parameter bounds
