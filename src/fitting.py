@@ -6,9 +6,9 @@ from scipy import optimize as scopt
 def fitted_model(model, t, tv):
     # returns sum of squared errors of model, given model parameters
     def model_sse(params):
-        pred_stv = model.predict(st, *params)
+        pred_tv = model.predict(t, *params)
         return np.sum(
-            (stv - pred_stv) ** 2
+            (tv - pred_tv) ** 2
         )
         
     # initial guess for parameters
@@ -24,8 +24,8 @@ def fitted_model(model, t, tv):
     bounds_t = zip(*model.bounds) # transpose
     fitted_params, cov_params = scopt.curve_fit(
         model.predict,          # function to fit
-        st,                     # times
-        stv,                    # tumor volumes
+        t,                      # times
+        tv,                     # tumor volumes
         initial_params,         # initial guess
         bounds=tuple(bounds_t), # parameter bounds
         maxfev=1000,            # max iterations
