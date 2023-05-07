@@ -222,8 +222,8 @@ def get_mae_and_aic(study_names, studies, models):
 def create_heatmap(file_path, normalize = False, value = "MAE"):
     data = pd.read_csv(file_path)
     if normalize:
-        data['MAE'] /= data.groupby("study_trend")["MAE"].transform(lambda x: (x - x.mean()) / x.std())
-        pivot = data.pivot(index='study_trend',columns='model',values='MAE')
+        data[value] /= data.groupby("study_trend")[value].transform(sum)
+        pivot = data.pivot(index='study_trend',columns='model',values=value)
         ax = sns.heatmap(pivot, annot= True)
     else: 
         pivot = data.pivot(index='study_trend',columns='model',values=value)
@@ -259,6 +259,6 @@ if __name__ == "__main__":
 
     #plot_actual_fitted(study_names, studies, models)
     #heatmaps(study_names=study_names, studies=studies, models=models)
-    create_heatmap(file_path="./src/data/output_MAE_AIC.csv", normalize=False, value="MAE")
+    create_heatmap(file_path="./src/data/output_MAE_AIC.csv", normalize=True, value="AIC")
     
     
