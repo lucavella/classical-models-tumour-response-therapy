@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import math
-import itertools as it
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
@@ -205,4 +204,4 @@ if __name__ == "__main__":
 
     # plot_correct_predictions(processed_studies)
 
-    plot_actual_fitted(study_names, studies, models)
+    plot_actual_fitted(study_names, processed_studies, models)

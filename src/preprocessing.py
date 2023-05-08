@@ -1,6 +1,5 @@
 import pandas as pd
 import math
-import itertools as it
 import utils
 
 
@@ -9,7 +8,7 @@ import utils
 # params: vector
 # return: numeric vector
 def clean_nonnumeric(vector, with_value=0):
-    #predicate to check if string is an integer
+    # predicate to check if string is an integer
     def is_number(string):
         try:
             return not math.isnan(float(string))
