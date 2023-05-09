@@ -3,11 +3,15 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+import seaborn as sns
 
 import models
 import utils
 import preprocessing as pre
-import fitting as fit
+import fit_studies as fit
+from sklearn.metrics import mean_absolute_error
+import warnings
+from sklearn import preprocessing
 
 
 
@@ -133,37 +137,15 @@ def plot_correct_predictions(studies, up_to=5):
 # plot actual vs predicted normalized tumor volume values
 # corresponds to figure 2C
 def plot_actual_fitted(study_names, studies, models, log_scale=False):
-    # fit model to patient data and predict
-    def fit_and_predict(model, patient):
-        try:
-            return pd.Series(
-                fit.fitted_model(
-                    model, 
-                    patient['TreatmentDay'], 
-                    patient['TumorVolumeNorm']
-                )(patient['TreatmentDay'])
-            )
-
-        # not ideal, multiple errors possible:
-        # curve_fit, ValueError: Residuals are not finite in the initial point
-        # curve_fit, RuntimeError: Optimal parameters not found: The maximum number of function evaluations is exceeded
-        # multiple warnings possible:
-        # curve_fit, OptimizeWarning: Covariance of the parameters could not be estimated
-        # numpy, RuntimeWarning: overflow encountered in multiply x = um.multiply(x, x, out=x)
-        # odeint: ODEintWarning: Excess accuracy requested (tolerances too small)
-        # odeint: ODEintWarning: Excess work done on this call (perhaps wrong Dfun type)
-        # odeint: lsoda--  at t (=r1), too much accuracy requested for precision of machine
-        except:
-            # return NaN predictions
-            return pd.Series([math.nan] * len(patient))
-
     fig, axs = plt.subplots(len(studies), len(models))
 
     for i, (study, name) in enumerate(zip(studies, study_names)):
         for j, model in enumerate(models):
             # fit and predict model function per patient
             predicted = study.groupby('PatientID') \
-                             .apply(lambda p: fit_and_predict(model, p))
+                             .apply(lambda p: pd.Series(
+                                fits.fit_patient(model, p)(p['TreatmentDay'])
+                             ))
 
             # create subplot
             axs[i, j].scatter(study['TumorVolumeNorm'], predicted)
@@ -179,11 +161,85 @@ def plot_actual_fitted(study_names, studies, models, log_scale=False):
     plt.show()
 
 
+def get_mae_and_aic(study_names, studies, models):
+    #column names of the output file
+    df = pd.DataFrame(columns=['study_trend','model','MAE','AIC'])
+    dictionary = dict()
+    
+    #split the studies in their recist groups (up/down/fluctuate)
+    for i, study in enumerate(studies):
+        study = utils.get_at_least(study, 6)
+        up_name = study_names[i]+"_up"
+        down_name = study_names[i]+"_down"
+        fluctuate_name = study_names[i]+"_fluctuate"
+        
+        up, down, fluctuate = utils.split_on_trend(study)
+        
+        dictionary[up_name] = up
+        dictionary[down_name] = down
+        dictionary[fluctuate_name] = fluctuate
+    
+    #go over every dataframe in the dictionary    
+    for entry in dictionary:
+        for model in models:
+            #predict with the model
+            predicted = dictionary[entry].groupby('PatientID') \
+                                         .apply(lambda p: pd.Series(
+                                            fits.fit_patient(model, p)(p['TreatmentDay'])
+                                         ))
+            
+            #check if the predictions have nan 
+            if predicted.hasnans:
+                for i, v in predicted.items():
+                    if math.isnan(v):
+                        #drop patients where prediction was NAN
+                        dictionary[entry] = dictionary[entry][dictionary[entry]['PatientID'] != i[0]]
+            
+            #drop nan values            
+            predicted = predicted.dropna()
+            
+            #convert predicted series to list to calculate absolute error (needs to be same datatype)
+            frame_predicted = predicted.to_frame()
+            frame_predicted = frame_predicted[0].to_list()
+            tumorVolumeNorm_list = dictionary[entry]['TumorVolumeNorm'].to_list()
+
+            Sum = 0
+            n = len(frame_predicted)
+            for i in range(n):
+                Sum += abs(frame_predicted[i] - tumorVolumeNorm_list[i])
+                
+            absError = Sum/n
+            SE = np.square(absError)
+            temp_sum = np.sum(SE)
+            #calculate aic
+            aic = (2 * utils.model_parameters[model.__name__]) - (2 * np.log(temp_sum))   
+            #calculate mae
+            mae = mean_absolute_error(dictionary[entry]['TumorVolumeNorm'], predicted)
+            new_row = {'study_trend':entry, 'model': model.__name__, 'MAE': mae, 'AIC':aic}
+            df.loc[len(df)] = new_row
+    df.to_csv("./src/data/output_MAE_AIC.csv")
+    
+    
+ #function to create the heatmap of the MAE and AIC
+def create_heatmap(file_path, normalize = False, value = "MAE"):
+    data = pd.read_csv(file_path)
+    if normalize:
+        data[value] /= data.groupby("study_trend")[value].transform(sum)
+        pivot = data.pivot(index='study_trend',columns='model',values=value)
+        ax = sns.heatmap(pivot, annot= True)
+    else: 
+        pivot = data.pivot(index='study_trend',columns='model',values=value)
+        ax = sns.heatmap(pivot, annot= True)
+    plt.show()
+    
+
 
 if __name__ == "__main__":
+    #disable warning in terminal
+    warnings.filterwarnings("ignore")
     # read all the studies as dataframes
     studies = [
-        pd.read_excel(f'./data/study{i}.xlsx')
+        pd.read_excel(f'./src/data/study{i}.xlsx')
         for i in range(1, 6)
     ]
     study_names = ["FIR", "POPULAR", "BIRCH", "OAK", "IMvigor 210"]
@@ -204,4 +260,8 @@ if __name__ == "__main__":
 
     # plot_correct_predictions(processed_studies)
 
-    plot_actual_fitted(study_names, processed_studies, models)
+    #plot_actual_fitted(study_names, processed_studies, models)
+    #heatmaps(study_names=study_names, studies=studies, models=models)
+    create_heatmap(file_path="./src/data/output_MAE_AIC.csv", normalize=True, value="AIC")
+    
+    
