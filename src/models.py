@@ -17,6 +17,7 @@ class Exponential:
                 (a - b) * V
         )(t, V0)[:, 0]
 
+    params = 3
     bounds = [
         (0, np.inf), # V0
         (0, np.inf), # a
@@ -30,6 +31,7 @@ class LogisticVerhulst:
                 a * V - b * V ** 2
         )(t, V0)[:, 0]
 
+    params = 3
     bounds = [
         (0, np.inf), # V0
         (0, np.inf), # a
@@ -43,6 +45,7 @@ class Gompertz:
                 V * (b - a * np.log(V))
         )(t, V0)[:, 0]
 
+    params = 3
     bounds = [
         (0, np.inf), # V0
         (0, np.inf), # a
@@ -56,6 +59,7 @@ class GeneralGompertz:
                 V ** l * (b - a * np.log(V))
         )(t, V0)[:, 0]
 
+    params = 4
     bounds = [
         (0, np.inf), # V0
         (0, np.inf), # a
@@ -70,6 +74,7 @@ class ClassicBertalanffy:
                 a * V ** (2 / 3) - b * V
         )(t, V0)[:, 0]
 
+    params = 3
     bounds = [
         (0, np.inf), # V0
         (0, np.inf), # a
@@ -83,6 +88,7 @@ class GeneralBertalanffy:
                 a * V ** l - b * V
         )(t, V0)[:, 0]
 
+    params = 4
     bounds = [
         (0, np.inf), # V0
         (0, np.inf), # a
@@ -101,12 +107,16 @@ class ExponentialLinear:
                 a * V if t <= u else b
         )(t, V0)[:, 0]
 
+    params = 4
+
 class GeneralLogistic:
     def predict(t, V0, a, v, K):
         return solutionDE(
             lambda V, t: \
                 gamm * V * (1 - (V / K) ** v)
         )(t, V0)[:, 0]
+
+    params = 4
 
 class dynamicCarryingCapacity:
     def predict(t, V0, a, b):
@@ -120,3 +130,5 @@ class dynamicCarryingCapacity:
             lambda y, t : \
                 [dKdt(y[1]), dVdt(y[0], y[1])]
         )(t, V0)[:, 0]
+
+    params = 3
