@@ -25,10 +25,10 @@ class Exponential:
     ]
 
 class LogisticVerhulst:
-    def predict(t, V0, a, b):
+    def predict(t, V0, g, K):
         return solutionDE(
             lambda V, t: \
-                a * V - b * V ** 2
+                g * V * (1 - V / K)
         )(t, V0)[:, 0]
 
     params = 3
