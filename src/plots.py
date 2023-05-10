@@ -8,7 +8,11 @@ import seaborn as sns
 import models
 import utils
 import preprocessing as pre
+<<<<<<< HEAD
 import fit_studies as fit
+=======
+import fitting as fit
+>>>>>>> 416ebd987a7c3e7c18351e5d0ce7d8b422c02858
 from sklearn.metrics import mean_absolute_error
 import warnings
 from sklearn import preprocessing
@@ -143,9 +147,13 @@ def plot_actual_fitted(study_names, studies, models, log_scale=False):
         for j, model in enumerate(models):
             # fit and predict model function per patient
             predicted = study.groupby('PatientID') \
+<<<<<<< HEAD
                              .apply(lambda p: pd.Series(
                                 fits.fit_patient(model, p)(p['TreatmentDay'])
                              ))
+=======
+                             .apply(lambda p: utils.fit_and_predict(model, p))
+>>>>>>> 416ebd987a7c3e7c18351e5d0ce7d8b422c02858
 
             # create subplot
             axs[i, j].scatter(study['TumorVolumeNorm'], predicted)
@@ -159,6 +167,8 @@ def plot_actual_fitted(study_names, studies, models, log_scale=False):
 
     plt.title(f'Actual vs predicted normalized tumor volumes', fontsize=24)
     plt.show()
+    
+    
 
 
 def get_mae_and_aic(study_names, studies, models):
@@ -183,10 +193,14 @@ def get_mae_and_aic(study_names, studies, models):
     for entry in dictionary:
         for model in models:
             #predict with the model
+<<<<<<< HEAD
             predicted = dictionary[entry].groupby('PatientID') \
                                          .apply(lambda p: pd.Series(
                                             fits.fit_patient(model, p)(p['TreatmentDay'])
                                          ))
+=======
+            predicted = dictionary[entry].groupby('PatientID').apply(lambda p: utils.fit_and_predict(model, p))
+>>>>>>> 416ebd987a7c3e7c18351e5d0ce7d8b422c02858
             
             #check if the predictions have nan 
             if predicted.hasnans:
@@ -230,9 +244,14 @@ def create_heatmap(file_path, normalize = False, value = "MAE"):
     else: 
         pivot = data.pivot(index='study_trend',columns='model',values=value)
         ax = sns.heatmap(pivot, annot= True)
+<<<<<<< HEAD
     plt.show()
     
 
+=======
+    plt.show()   
+    
+>>>>>>> 416ebd987a7c3e7c18351e5d0ce7d8b422c02858
 
 if __name__ == "__main__":
     #disable warning in terminal
@@ -260,8 +279,16 @@ if __name__ == "__main__":
 
     # plot_correct_predictions(processed_studies)
 
+<<<<<<< HEAD
     #plot_actual_fitted(study_names, processed_studies, models)
     #heatmaps(study_names=study_names, studies=studies, models=models)
     create_heatmap(file_path="./src/data/output_MAE_AIC.csv", normalize=True, value="AIC")
     
     
+=======
+    #plot_actual_fitted(study_names, studies, models)
+    #heatmaps(study_names=study_names, studies=studies, models=models)
+    create_heatmap(file_path="./src/data/output_MAE_AIC.csv", normalize=True, value="AIC")
+    
+    
+>>>>>>> 416ebd987a7c3e7c18351e5d0ce7d8b422c02858

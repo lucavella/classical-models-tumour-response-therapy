@@ -69,6 +69,9 @@ class bcolors:
 model_parameters = {"Exponential": 3,"LogisticVerhulst":3,"ClassicBertalanffy":3, "GeneralBertalanffy":4, "Gompertz":3, "GeneralGompertz":4}  
 
 
+
+
+
 # detect if the trend of LD data is going, up, down or fluctuates
 # based on paper section "Patient categorization according to RECIST and trajectory type"
 # params: data point vector
