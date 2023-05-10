@@ -9,10 +9,10 @@ import warnings
 
 
 # get all records of patients with 'i' or more data points
-# params: joint dataframe of all studies, like the output of 'preprocess'
+# params: study dataframe
 # return: dataframe with data points of patients with 'i' or more data points
-def get_at_least(studies, i):
-    return studies.groupby('PatientID') \
+def get_at_least(study, i):
+    return study.groupby('PatientID') \
                   .filter(lambda group: group['PatientID'].count() >= i)
 
 
@@ -69,9 +69,6 @@ class bcolors:
 model_parameters = {"Exponential": 3,"LogisticVerhulst":3,"ClassicBertalanffy":3, "GeneralBertalanffy":4, "Gompertz":3, "GeneralGompertz":4}  
 
 
-
-
-
 # detect if the trend of LD data is going, up, down or fluctuates
 # based on paper section "Patient categorization according to RECIST and trajectory type"
 # params: data point vector
@@ -116,29 +113,3 @@ def split_on_trend(study):
             fluctuate.append(patient_data)
     
     return pd.concat(up), pd.concat(down), pd.concat(fluctuate)
-
-
-
-
-# fit model to patient data and predict
-def fit_and_predict(model, patient):
-    try:
-        return pd.Series(
-            fit.fitted_model(
-                model, 
-                patient['TreatmentDay'], 
-                patient['TumorVolumeNorm']
-            )(patient['TreatmentDay'])
-        )
-    # not ideal, multiple errors possible:
-    # curve_fit, ValueError: Residuals are not finite in the initial point
-    # curve_fit, RuntimeError: Optimal parameters not found: The maximum number of function evaluations is exceeded
-    # multiple warnings possible:
-    # curve_fit, OptimizeWarning: Covariance of the parameters could not be estimated
-    # numpy, RuntimeWarning: overflow encountered in multiply x = um.multiply(x, x, out=x)
-    # odeint: ODEintWarning: Excess accuracy requested (tolerances too small)
-    # odeint: ODEintWarning: Excess work done on this call (perhaps wrong Dfun type)
-    # odeint: lsoda--  at t (=r1), too much accuracy requested for precision of machine
-    except:
-        # return NaN predictions
-        return pd.Series([math.nan] * len(patient))

@@ -2,6 +2,7 @@ import pandas as pd
 import multiprocessing as mp
 import itertools as it
 import fitting as fit
+import utils
 
 
 
@@ -14,19 +15,19 @@ def fit_patient(model, patient):
     )
 
 
-# fit model using "first_n" data points
-# if "first_n" is set to None, all data points are used
-def fit_study_params(study, model, first_n=None):
-    def first_n_fitted_params(p):
-        if first_n:
-            p = p.head(first_n)
+# fit model without last "drop_last" data points
+# if "drop_last" is set to None, all data points are used
+def fit_study_params(study, model, drop_last=None):
+    def drop_last_fitted_params(p):
+        if drop_last:
+            p = p.head(len(p) - drop_last)
 
         params = fit.fitted_params(model, p['TreatmentDay'], p['TumorVolumeNorm'])
         if params is not None:
             return pd.Series(params)
 
     result = study.groupby(['StudyNr', 'Arm', 'PatientID']) \
-                  .apply(first_n_fitted_params) \
+                  .apply(drop_last_fitted_params) \
                   .reset_index()
     
     study_nr = int(result.iloc[0]['StudyNr'])
@@ -36,12 +37,14 @@ def fit_study_params(study, model, first_n=None):
     return (result, name)
     
 
-def save_study_params(studies, models, first_n=None, prefix='', max_workers=None):
+# fits data points without last "drop_last" of each patient for all combinations of studies and models and stores as csv
+# runs parallelized for efficiency
+def save_study_params(studies, models, drop_last=None, prefix='', max_workers=None):
     def store(result):
         df, name = result
 
-        if first_n:
-            amount = f'atleast{first_n}'
+        if drop_last:
+            amount = f'drop{drop_last}'
         else:
             amount = 'all'
 
@@ -60,7 +63,7 @@ def save_study_params(studies, models, first_n=None, prefix='', max_workers=None
         results = [
             pool.apply_async(
                 fit_study_params,
-                args=(study, model, first_n),
+                args=(study, model, drop_last),
                 callback=store,
                 error_callback=print
             )
@@ -97,9 +100,18 @@ if __name__ == "__main__":
 
     processed_studies = pre.preprocess(studies)
 
+    # save_study_params(
+    #     processed_studies, 
+    #     model_list, 
+    #     prefix='./data/params/experiment1_initial', 
+    #     max_workers=mp.cpu_count()
+    # )
+
+    processed_atleast6_studies = map(lambda s: utils.get_at_least(s, 6), processed_studies)
     save_study_params(
-        processed_studies, 
-        model_list, 
-        prefix='./data/params/experiment1_initial', 
+        processed_atleast6_studies,
+        model_list,
+        drop_last=3,
+        prefix='./data/params/experiment2_initial', 
         max_workers=mp.cpu_count()
     )
