@@ -112,6 +112,6 @@ if __name__ == "__main__":
         processed_atleast6_studies,
         model_list,
         drop_last=3,
-        prefix='./data/params/experiment2_initial', 
+        prefix='./data/params/experiment2_initial/', 
         max_workers=mp.cpu_count()
     )
