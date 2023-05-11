@@ -145,29 +145,38 @@ def plot_correct_predictions(studies, up_to=5):
 
 # plot actual vs predicted normalized tumor volume values
 # corresponds to figure 2C
-def plot_actual_fitted(study_names, studies, models, log_scale=False):
-    fig, axs = plt.subplots(len(studies), len(models))
+def plot_actual_fitted(study_names, studies, models, dirname, log_scale=False):
+    def get_params(params, p):
+        return np.array(params.loc[params['PatientID'] == p].iloc[0, 4:])
 
-    for i, (study, name) in enumerate(zip(studies, study_names)):
-        for j, model in enumerate(models):
+    fig, axs = plt.subplots(len(studies), len(models), figsize=(25, 25))
+
+    for (fn_study, name), study, ax_row in zip(study_names.items(), studies, axs):
+        for model, ax in zip(models, ax_row):
+            params = pd.read_csv(f'{dirname}/{fn_study}_{model.__name__.lower()}_all.csv')
+
             # fit and predict model function per patient
             predicted = study.groupby('PatientID') \
                              .apply(lambda p: pd.Series(
-                                fits.fit_patient(model, p)(p['TreatmentDay'])
+                                model.predict(p['TreatmentDay'], *get_params(params, p.name))
                              ))
 
-            # create subplot
-            axs[i, j].scatter(study['TumorVolumeNorm'], predicted)
-            axs[i, j].axline((0, 0), slope=1, linestyle=':', color='black')
-            if log_scale:
-                axs[i, j].set_xscale('log')
-                axs[i, j].set_yscale('log')
-            axs[i, j].set_xlabel('Actual normalized tumor volume', fontsize=16)
-            axs[i, j].set_ylabel('Predicted normalized tumor volume', fontsize=16)
-            axs[i, j].set_title(f'Study: {name}, Model: {model.__name__}', fontsize=16)
+            with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+                print(predicted)
 
-    plt.title(f'Actual vs predicted normalized tumor volumes', fontsize=24)
-    plt.show()
+
+            # create subplot
+            ax.scatter(study['TumorVolumeNorm'], predicted)
+            ax.axline((0, 0), slope=1, linestyle=':', color='black')
+            if log_scale:
+                ax.set_xscale('log')
+                ax.set_yscale('log')
+            ax.set_xlabel('Actual normalized tumor volume', fontsize=10)
+            ax.set_ylabel('Predicted normalized tumor volume', fontsize=10)
+            ax.set_title(f'Study: {name}, Model: {model.__name__}', fontsize=12)
+
+    fig.tight_layout()
+    fig.savefig('../imgs/2C.svg', format='svg', dpi=1200)
     
     
 
@@ -241,19 +250,32 @@ def create_heatmap(file_path, normalize = False, value = "MAE"):
     else: 
         pivot = data.pivot(index='study_trend',columns='model',values=value)
         ax = sns.heatmap(pivot, annot= True)
+
+    ax.set_title('AIC values categorized by final RECIST', fontsize=20)
+    ax.tick_params(labelsize=16)
+
+    plt.xlabel('')
+    plt.ylabel('')
+    plt.xticks(rotation=45, ha='center')
     plt.show()
     
 
 
 if __name__ == "__main__":
-    #disable warning in terminal
+    # disable warning in terminal
     warnings.filterwarnings("ignore")
     # read all the studies as dataframes
     studies = [
         pd.read_excel(f'./data/study{i}.xlsx')
         for i in range(1, 6)
     ]
-    study_names = ["FIR", "POPULAR", "BIRCH", "OAK", "IMvigor 210"]
+    study_names = {
+        'study1': "FIR", 
+        'study2': "POPULAR", 
+        'study3': "BIRCH", 
+        'study4': "OAK", 
+        'study5': "IMvigor 210"
+    }
     models = [
         models.Exponential,
         models.LogisticVerhulst,
@@ -265,15 +287,20 @@ if __name__ == "__main__":
 
     processed_studies = pre.preprocess(studies)
 
-    plot_change_trend(study_names, processed_studies,)
+    # plot_change_trend(study_names, processed_studies,)
 
-    for name, study in zip(study_names, processed_studies):
-        plot_proportion_trend(name, study)
+    # for name, study in zip(study_names.values(), processed_studies):
+    #     plot_proportion_trend(name, study)
 
     # plot_correct_predictions(processed_studies)
 
-    #plot_actual_fitted(study_names, processed_studies, models)
-    #heatmaps(study_names=study_names, studies=studies, models=models)
-    #create_heatmap(file_path="./src/data/output_MAE_AIC.csv", normalize=True, value="AIC")
+    plot_actual_fitted(
+        study_names,
+        processed_studies,
+        models,
+        './data/params/experiment1_initial'
+    )
+    #heatmaps(study_names=study_names.values(), studies=studies, models=models)
+    create_heatmap(file_path="./data/output_MAE_AIC.csv", normalize=False, value="AIC")
     
     

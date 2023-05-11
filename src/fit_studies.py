@@ -103,7 +103,7 @@ if __name__ == "__main__":
     # save_study_params(
     #     processed_studies, 
     #     model_list, 
-    #     prefix='./data/params/experiment1_initial', 
+    #     prefix='./data/params/experiment1_initial/', 
     #     max_workers=mp.cpu_count()
     # )
 
