@@ -28,11 +28,25 @@ def check_patient_overlap(studies):
 
 
 # converts the time (days) to weeks
-# e.g if the day 227 => week 33
+# e.g if the day 227 => week 32.43
 # params: time vector in days
 # return: time vector in weeks
 def convert_to_weeks(time):
-    return [math.ceil(i/7) for i in time]
+    return [i/7 for i in time]
+
+
+# removes measurements before treatment started
+# params: time and measurements
+# return: time and measurements since treatment started
+def filter_treatment_started(time, data):
+    time = np.array(time)
+    data = np.array(data)
+
+    treatment_started = time >= 0
+    return (
+        time[treatment_started],
+        data[treatment_started]
+    )
 
 
 # Trend enum
@@ -53,7 +67,7 @@ class Trend(Enum):
         return self.value < other.value
     
     
-#class to print colors in the terminal ()
+# class to print colors in the terminal
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'

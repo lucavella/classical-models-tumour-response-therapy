@@ -14,44 +14,54 @@ from sklearn import preprocessing
 
 
 
-# plot the change in LD from baseline for given study
+# plot the change in LD from treatment start for given study
 # corresponds to figure 1C
-def plot_change_trend(name, study, amount=10):
-    study = utils.get_at_least(study, 2) # patients need >= 2 data points
-    fig, ax = plt.subplots()
+# input: names of studies, list of studies, amount of patients per study
+def plot_change_trend(names, studies, amount=10):
+    fig, axs = plt.subplots(1, len(studies), figsize=(25, 5))
     
-    # take up to "amount" patients from study
-    for patient in study['PatientID'].unique()[:amount]:
-        # get LD and treatment week from dataframe for patient
-        patient_data = study.loc[study['PatientID'] == patient]
-        ld_data = np.array(patient_data['TargetLesionLongDiam_mm'])
-        time = utils.convert_to_weeks(patient_data['TreatmentDay'])
-
-        # get trend for color and LD deltas
-        trend = utils.detect_trend(ld_data)
-        ld_delta = ld_data - ld_data[0] # change in LD from first measurement
-        time_delta = np.array(time) - time[0] # start with time is 0
+    for name, study, ax in zip(names, studies, axs):
+        study = utils.get_at_least(study, 2) # patients need >= 2 data points
         
-        ax.plot(
-            time_delta,
-            ld_delta,
-            marker='o',
-            markeredgewidth=3,
-            linewidth=2,
-            color=trend.color()
-        )
+        # take up to "amount" patients from study
+        for patient in study['PatientID'].unique()[:amount]:
+            # get LD and treatment week since treatment started for patient
+            patient_data = study.loc[study['PatientID'] == patient]
+            time, ld_data  = utils.filter_treatment_started(
+                utils.convert_to_weeks(patient_data['TreatmentDay']),
+                patient_data['TargetLesionLongDiam_mm']
+            )
 
-    # create plot labels, legend, ...
-    plt.axhline(y=0, linestyle=':', color='black')
-    plt.xlabel('Time (weeks)', fontsize=16)
-    plt.ylabel('Change in LD from baseline (mm)', fontsize=16)
-    plt.title(f'Change in LD and trend per patient for {name}', fontsize=24)
-    ax.legend(
-        [Line2D([0], [0], color=trend.color(), lw=4) for trend in utils.Trend], 
-        [trend.name for trend in utils.Trend], 
-        fontsize=16
-    )
-    plt.show()
+            # get trend for color and LD deltas
+            trend = utils.detect_trend(ld_data)
+            ld_delta = ld_data - ld_data[0] # change in LD from first measurement
+            time_delta = time - time[0] # start with time is 0
+            
+
+            # create subplot
+            ax.plot(
+                time_delta,
+                ld_delta,
+                marker='o',
+                markeredgewidth=3,
+                linewidth=2,
+                color=trend.color()
+            )
+
+            ax.set_title(name, fontsize=20)
+            ax.axhline(y=0, linestyle=':', linewidth=1, color='gray')
+            ax.set_xlabel('Time (weeks)', fontsize=16)
+            ax.set_ylabel('Change in LD from baseline (mm)', fontsize=16)
+            ax.tick_params(axis='both', which='major', labelsize=16)
+
+    # plt.legend(
+    #     [Line2D([0], [0], color=trend.color(), lw=4) for trend in utils.Trend], 
+    #     [trend.name for trend in utils.Trend], 
+    #     fontsize=12
+    # )
+
+    fig.tight_layout()
+    fig.savefig('../imgs/1C.svg', format='svg', dpi=1200)
 
 
 # plot the proportions of trends for a study
@@ -240,7 +250,7 @@ if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     # read all the studies as dataframes
     studies = [
-        pd.read_excel(f'./src/data/study{i}.xlsx')
+        pd.read_excel(f'./data/study{i}.xlsx')
         for i in range(1, 6)
     ]
     study_names = ["FIR", "POPULAR", "BIRCH", "OAK", "IMvigor 210"]
@@ -255,14 +265,15 @@ if __name__ == "__main__":
 
     processed_studies = pre.preprocess(studies)
 
-    # for name, study in zip(study_names, processed_studies):
-    #     plot_change_trend(name, study, amount=10)
-    #     plot_proportion_trend(name, study)
+    plot_change_trend(study_names, processed_studies,)
+
+    for name, study in zip(study_names, processed_studies):
+        plot_proportion_trend(name, study)
 
     # plot_correct_predictions(processed_studies)
 
     #plot_actual_fitted(study_names, processed_studies, models)
     #heatmaps(study_names=study_names, studies=studies, models=models)
-    create_heatmap(file_path="./src/data/output_MAE_AIC.csv", normalize=True, value="AIC")
+    #create_heatmap(file_path="./src/data/output_MAE_AIC.csv", normalize=True, value="AIC")
     
     
