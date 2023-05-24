@@ -63,16 +63,17 @@ class Trend(Enum):
         elif self == Trend.DOWN:
             return '#1a9850'
 
-    def __lt__(self,other):
+    def __lt__(self, other):
         return self.value < other.value
-    
-class Trend_recist(Enum):
+
+# Recist enum
+class Recist(Enum):
     CR = 1
     PR = 2
     PD = 3
     SD = 4
 
-    def __lt__(self,other):
+    def __lt__(self, other):
         return self.value < other.value
     
 
@@ -103,62 +104,20 @@ def detect_trend(vector):
     else:
         return Trend.FLUCTUATE
     
-def detect_trend_recist(vector):
+def detect_recist(vector):
     # get difference vector
     v = np.array(vector)
-    #calculate difference between last diameter and first measured diameter
+    # calculate difference between last diameter and first measured diameter
     difference = v[-1] - v[0]
-    #CR: (Complete Response) dissapearing of all target lesions
+    # CR: (Complete Response) dissapearing of all target lesions
     if v[-1] == 0:
-        return Trend_recist.CR
-    #PR: (Partial Response) at least 30% decrease in diameter
-    elif difference < - 0.3  * v[0]:
-        return Trend_recist.PR
-    #PD: (Progressive Disease) at least 20% increase in diamater
+        return Recist.CR
+    # PR: (Partial Response) at least 30% decrease in diameter
+    elif difference < -0.3  * v[0]:
+        return Recist.PR
+    # PD: (Progressive Disease) at least 20% increase in diamater
     elif difference > 0.2 * v[0]:
-        return Trend_recist.PD
-    #SD: (Stable disease) none of the above apply
+        return Recist.PD
+    # SD: (Stable disease) none of the above apply
     else:
-        return Trend_recist.SD
-    
-    
-    
-def split_on_trend(study):
-    up = []
-    down = []
-    fluctuate = []
-    
-    for patient in study['PatientID'].unique():
-        patient_data = study.loc[study['PatientID'] == patient]
-        ld_data = np.array(patient_data['TargetLesionLongDiam_mm'])
-        trend = detect_trend(ld_data)
-        if trend == Trend.UP:
-            up.append(patient_data)
-        elif trend == Trend.DOWN:
-            down.append(patient_data)
-        elif trend == Trend.FLUCTUATE:
-            fluctuate.append(patient_data)
-   
-    
-    return pd.concat(up), pd.concat(down), pd.concat(fluctuate)
-
-def split_on_trend_recist(study):
-    complete_response = []
-    partial_response = []
-    progressive_disease = []
-    stable_disease = []
-    
-    for patient in study['PatientID'].unique():
-        patient_data = study.loc[study['PatientID'] == patient]
-        ld_data = np.array(patient_data['TargetLesionLongDiam_mm'])
-        trend = detect_trend_recist(ld_data)
-        if trend == Trend_recist.CR:
-            complete_response.append(patient_data)
-        elif trend == Trend_recist.PR:
-            partial_response.append(patient_data)
-        elif trend == Trend_recist.PD:
-            progressive_disease.append(patient_data)
-        elif trend == Trend_recist.SD:
-            stable_disease.append(patient_data)
-    
-    return pd.concat(complete_response), pd.concat(partial_response), pd.concat(progressive_disease), pd.concat(stable_disease)
+        return Recist.SD
