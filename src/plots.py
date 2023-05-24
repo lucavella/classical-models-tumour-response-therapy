@@ -11,7 +11,7 @@ import preprocessing as pre
 from sklearn.metrics import mean_absolute_error
 import warnings
 from sklearn import preprocessing
-
+import fit_studies as fits
 
 
 # plot the change in LD from treatment start for given study
@@ -111,13 +111,20 @@ def plot_proportion_trend(name, study):
   
 # plot the proportions of correct trends predictions based on 2 to "up_to" data points per study and arm
 # corresponds to figure 1E
-def plot_correct_predictions(studies, up_to=5):
+def plot_correct_predictions(studies, up_to=5, recist=True):
+    #recist means the Recist 1.1 categories
+    if recist:
+        f = utils.detect_trend_recist
+    #categories that the authors invented
+    else:
+        f = utils.detect_trend
+    
     amount_points = range(2, up_to + 1) # always at least 2 points
     merged_studies = pd.concat(studies, ignore_index=True)
 
     # get trend of each patient
     trends = merged_studies.groupby(['StudyNr', 'Arm', 'PatientID']) \
-                           .apply(lambda p: utils.detect_trend(p['TargetLesionLongDiam_mm'])) \
+                           .apply(lambda p: f(p['TargetLesionLongDiam_mm'])) \
                            .rename('Trend')
 
 
@@ -126,7 +133,7 @@ def plot_correct_predictions(studies, up_to=5):
         merged_studies.groupby(['StudyNr', 'Arm', 'PatientID']) \
                       .apply(lambda p: \
                           # compare trend of first i with final trend
-                          utils.detect_trend(p.head(i)['TargetLesionLongDiam_mm']) \
+                          f(p.head(i)['TargetLesionLongDiam_mm']) \
                           == trends.loc[*p.name]
                       ) \
                       .rename('CorrectTrend').reset_index() \
@@ -177,31 +184,48 @@ def plot_actual_fitted(study_names, studies, models, dirname, log_scale=False):
 
     fig.tight_layout()
     fig.savefig('../imgs/2C.svg', format='svg', dpi=1200)
-    
-    
 
 
-def get_mae_and_aic(study_names, studies, models):
+def get_mae_and_aic(study_names, studies, models, recist=True):
     #column names of the output file
     df = pd.DataFrame(columns=['study_trend','model','MAE','AIC'])
     dictionary = dict()
     
-    #split the studies in their recist groups (up/down/fluctuate)
-    for i, study in enumerate(studies):
-        study = utils.get_at_least(study, 6)
-        up_name = study_names[i]+"_up"
-        down_name = study_names[i]+"_down"
-        fluctuate_name = study_names[i]+"_fluctuate"
+    if recist:
+        #split the studies in their recist groups (CR/PR/PD/SD)
+        for i, study in enumerate(studies):
+            study = utils.get_at_least(study, 6)
+            CR_name = study_names[i]+"_CR"
+            PR_name = study_names[i]+"_PR"
+            PD_name = study_names[i]+"_PD"
+            SD_name = study_names[i]+"_SD"
+
+            CR, PR, PD, SD = utils.split_on_trend_recist(study)
+
+            dictionary[CR_name] = CR
+            dictionary[PR_name] = PR
+            dictionary[PD_name] = PD
+            dictionary[SD_name] = SD
+    else:
+        #split the studies in their recist groups (up/down/fluctuate)
+        for i, study in enumerate(studies):
+            study = utils.get_at_least(study, 6)
+            up_name = study_names[i]+"_up"
+            down_name = study_names[i]+"_down"
+            fluctuate_name = study_names[i]+"_fluctuate"
+
+            up, down, fluctuate = utils.split_on_trend(study)
+
+            dictionary[up_name] = up
+            dictionary[down_name] = down
+            dictionary[fluctuate_name] = fluctuate
         
-        up, down, fluctuate = utils.split_on_trend(study)
-        
-        dictionary[up_name] = up
-        dictionary[down_name] = down
-        dictionary[fluctuate_name] = fluctuate
     
     #go over every dataframe in the dictionary    
     for entry in dictionary:
+        print(entry)
         for model in models:
+            print(model.__name__)
             #predict with the model
             predicted = dictionary[entry].groupby('PatientID') \
                                          .apply(lambda p: pd.Series(
@@ -237,14 +261,18 @@ def get_mae_and_aic(study_names, studies, models):
             mae = mean_absolute_error(dictionary[entry]['TumorVolumeNorm'], predicted)
             new_row = {'study_trend':entry, 'model': model.__name__, 'MAE': mae, 'AIC':aic}
             df.loc[len(df)] = new_row
-    df.to_csv("./src/data/output_MAE_AIC.csv")
+    if recist:
+        df.to_csv("./src/data/output_MAE_AIC_recist.csv")
+    else:
+        df.to_csv("./src/data/output_MAE_AIC.csv")
     
     
  #function to create the heatmap of the MAE and AIC
 def create_heatmap(file_path, normalize = False, value = "MAE"):
     data = pd.read_csv(file_path)
     if normalize:
-        data[value] /= data.groupby("study_trend")[value].transform(sum)
+        print(data.groupby("study_trend"))
+        data[value] /= data.groupby("study_trend")[value].transform(sum) * 0.21
         pivot = data.pivot(index='study_trend',columns='model',values=value)
         ax = sns.heatmap(pivot, annot= True)
     else: 
@@ -266,7 +294,7 @@ if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     # read all the studies as dataframes
     studies = [
-        pd.read_excel(f'./data/study{i}.xlsx')
+        pd.read_excel(f'./src/data/study{i}.xlsx')
         for i in range(1, 6)
     ]
     study_names = {
@@ -276,6 +304,9 @@ if __name__ == "__main__":
         'study4': "OAK", 
         'study5': "IMvigor 210"
     }
+    
+    study_names_list = ["FIR","POPLAR","BIRCH","OAK","IMVIGOR210"]
+        
     models = [
         models.Exponential,
         models.LogisticVerhulst,
@@ -286,6 +317,9 @@ if __name__ == "__main__":
     ]
 
     processed_studies = pre.preprocess(studies)
+    #get_mae_and_aic(study_names_list, processed_studies, models, recist=True)
+    
+    #plot_correct_predictions(processed_studies, recist=True)
 
     # plot_change_trend(study_names, processed_studies,)
 
@@ -294,13 +328,13 @@ if __name__ == "__main__":
 
     # plot_correct_predictions(processed_studies)
 
-    plot_actual_fitted(
-        study_names,
-        processed_studies,
-        models,
-        './data/params/experiment1_initial'
-    )
+    #plot_actual_fitted(
+    #    study_names,
+    #    processed_studies,
+    #    models,
+    #    './data/params/experiment1_initial'
+    #)
     #heatmaps(study_names=study_names.values(), studies=studies, models=models)
-    create_heatmap(file_path="./data/output_MAE_AIC.csv", normalize=False, value="AIC")
+    create_heatmap(file_path="./src/data/output_MAE_AIC_recist.csv", normalize=True, value="AIC")
     
     
