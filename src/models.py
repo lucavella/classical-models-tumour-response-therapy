@@ -12,10 +12,11 @@ def solutionDE(de):
 # Introduction to mathematical oncology (table 2.1)
 class Exponential:
     def predict(t, V0, a, b):
-        return solutionDE(
-            lambda V, t: \
-                (a - b) * V
-        )(t, V0)[:, 0]
+        # return solutionDE(
+        #     lambda V, t: \
+        #         (a - b) * V
+        # )(t, V0)[:, 0]
+        return V0 * np.exp((a - b) * t)
 
     params = 3
     bounds = [
@@ -26,10 +27,11 @@ class Exponential:
 
 class LogisticVerhulst:
     def predict(t, V0, g, K):
-        return solutionDE(
-            lambda V, t: \
-                g * V * (1 - V / K)
-        )(t, V0)[:, 0]
+        # return solutionDE(
+        #     lambda V, t: \
+        #         g * V * (1 - V / K)
+        # )(t, V0)[:, 0]
+        return (V0 * K * np.exp(g * t)) / (K - V0 * (1 - np.exp(g * t)))
 
     params = 3
     bounds = [
@@ -40,10 +42,11 @@ class LogisticVerhulst:
 
 class Gompertz:
     def predict(t, V0, a, b):
-        return solutionDE(
-            lambda V, t: \
-                V * (b - a * np.log(V))
-        )(t, V0)[:, 0]
+        # return solutionDE(
+        #     lambda V, t: \
+        #         V * (b - a * np.log(V))
+        # )(t, V0)[:, 0]
+        return np.exp(b / a + (np.log(V0) - b / a) * np.exp(-a * t))
 
     params = 3
     bounds = [
@@ -69,10 +72,11 @@ class GeneralGompertz:
 
 class ClassicBertalanffy:
     def predict(t, V0, a, b):
-        return solutionDE(
-            lambda V, t: \
-                a * V ** (2 / 3) - b * V
-        )(t, V0)[:, 0]
+        # return solutionDE(
+        #     lambda V, t: \
+        #         a * V ** (2 / 3) - b * V
+        # )(t, V0)[:, 0]
+        return (a / b + (V0 ** (1 / 3) - a / b) * np.exp(-1 / 3 * b * t)) ** 3
 
     params = 3
     bounds = [
@@ -83,10 +87,11 @@ class ClassicBertalanffy:
 
 class GeneralBertalanffy:
     def predict(t, V0, a, b, l):
-        return solutionDE(
-            lambda V, t: \
-                a * V ** l - b * V
-        )(t, V0)[:, 0]
+        # return solutionDE(
+        #     lambda V, t: \
+        #         a * V ** l - b * V
+        # )(t, V0)[:, 0]
+        return (a / b + (V0 ** (1 - l) - a / b) * np.exp(-b * (1 - l) * t)) ** (1 / (1 - l))
 
     params = 4
     bounds = [
@@ -110,10 +115,10 @@ class ExponentialLinear:
     params = 4
 
 class GeneralLogistic:
-    def predict(t, V0, a, v, K):
+    def predict(t, V0, a, b, K):
         return solutionDE(
             lambda V, t: \
-                gamm * V * (1 - (V / K) ** v)
+                a * V * (1 - (V / K) ** b)
         )(t, V0)[:, 0]
 
     params = 4

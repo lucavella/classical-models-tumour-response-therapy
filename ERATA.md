@@ -4,6 +4,9 @@
 * Logistic (Verhulst) differential equation (table 3), N -> K, source:
     Bacaër, N. (2011). Verhulst and the logistic equation (1838).*IA short history of mathematical population dynamics* (Vol. 618). London: Springer.
 
+* Gompertz differential equation solution (table 3), V -> V_0, source:
+    Kuang, Y., Nagy, J. D., & Eikenberry, S. E. (2018). *Introduction to mathematical oncology*. CRC Press.
+
 * Figure 1C: x-axis is displayed as Time(days) but it actually needs to be Time(Weeks) since the authors convert their data to the amount of weeks.
 
 * By comparing Table 1 and Fig 1D we can see that the author messed up the labeling of the studies. This creates an unreadable effect and makes it hard to understand which data belongs to which study.
