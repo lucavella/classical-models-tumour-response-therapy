@@ -121,3 +121,19 @@ def detect_recist(vector):
     # SD: (Stable disease) none of the above apply
     else:
         return Recist.SD
+    
+
+def akaike_information_criterion(k):
+    def aic(y, y_pred):
+        n = len(y)
+
+        df = n - k # degrees of freedom
+        rss = np.sum((y - y_pred) ** 2) # residual sum of squares
+        sigma2 = rss / df  # reduced chi-squared statistic
+
+        # max value log-likelihood (doubled)
+        lnL2 = - n * np.log(2 * np.pi) - n * np.log(sigma2) - df
+        
+        return 2 * k - lnL2
+    
+    return aic
