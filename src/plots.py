@@ -249,10 +249,10 @@ if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     # read all the studies as dataframes
     study_names = ['FIR', 'POPLAR', 'BIRCH', 'OAK', 'IMVIGOR210']
-    studies = {
-        name: pd.read_excel(f'./data/study{i}.xlsx')
-        for i, name in enumerate(study_names, start=1)
-    }
+    studies = [
+        pd.read_excel(f'./data/study{i}.xlsx')
+        for i, _ in enumerate(study_names, start=1)
+    ]
         
     models = [
         models.Exponential,
@@ -263,24 +263,22 @@ if __name__ == "__main__":
         models.GeneralBertalanffy
     ]
 
-    processed_studies = pre.preprocess(studies)
-    
+    processed_studies = {
+        name: study
+        for name, study in zip(study_names, pre.preprocess(studies))
+    }
+
     # plot_correct_predictions(processed_studies, recist=True)
 
-    # plot_change_trend(study_names, processed_studies,)
+    # plot_change_trend(processed_studies)
 
-    # for name, study in zip(study_names.values(), processed_studies):
+    # for name, study in processed_studies.items():
     #     plot_proportion_trend(name, study)
 
     # plot_correct_predictions(processed_studies)
 
-    # plot_actual_fitted(
-    #    study_names,
-    #    processed_studies,
-    #    models,
-    #    './data/params/experiment1_initial'
-    # )
-    # heatmaps(study_names=study_names, studies=studies, models=models)
-    plot_trend_pred_error(studies, models, 'data/params/experiment1_initial', error_metric='AIC')
+    # plot_actual_fitted(processed_studies, models, './data/params/experiment1_initial')
+    
+    plot_trend_pred_error(processed_studies, models, 'data/params/experiment1_initial', error_metric='AIC')
     
     

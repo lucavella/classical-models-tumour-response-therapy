@@ -81,14 +81,14 @@ if __name__ == "__main__":
     import preprocessing as pre
     import models
 
-    #nwarnings.filterwarnings('ignore')
+    # warnings.filterwarnings('ignore')
 
     # read all the studies as dataframes
     studies = [
         pd.read_excel(f'./data/study{i}.xlsx')
         for i in range(1, 6)
     ]
-    study_names = ["FIR", "POPULAR", "BIRCH", "OAK", "IMvigor 210"]
+
     model_list = [
         models.Exponential,
         models.LogisticVerhulst,
@@ -98,7 +98,7 @@ if __name__ == "__main__":
         models.GeneralBertalanffy
     ]
 
-    processed_studies = pre.preprocess(studies)
+    processed_studies =  pre.preprocess(studies)
 
     # save_study_params(
     #     processed_studies, 
