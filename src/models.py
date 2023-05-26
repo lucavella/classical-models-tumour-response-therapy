@@ -6,16 +6,17 @@ import scipy.integrate as scint
 # y0 = V(t=0) (or y0 = [K(t=0), V(t=0)] for dynamic CC)
 def solutionDE(de):
     return lambda t, y0: \
-        scint.odeint(de, y0, t)
+        scint.solve_ivp(de, (t[0], t[-1]), [y0], dense_output=True, vectorized=True).sol(t)
 
 
 # Introduction to mathematical oncology (table 2.1)
 class Exponential:
     def predict(t, V0, a, b):
+        t = np.array(t)
         # return solutionDE(
-        #     lambda V, t: \
+        #     lambda t, V: \
         #         (a - b) * V
-        # )(t, V0)[:, 0]
+        # )(t, V0)[0]
         return V0 * np.exp((a - b) * t)
 
     params = 3
@@ -27,10 +28,11 @@ class Exponential:
 
 class LogisticVerhulst:
     def predict(t, V0, g, K):
+        t = np.array(t)
         # return solutionDE(
-        #     lambda V, t: \
+        #     lambda t, V: \
         #         g * V * (1 - V / K)
-        # )(t, V0)[:, 0]
+        # )(t, V0)[0]
         return (V0 * K * np.exp(g * t)) / (K - V0 * (1 - np.exp(g * t)))
 
     params = 3
@@ -42,10 +44,11 @@ class LogisticVerhulst:
 
 class Gompertz:
     def predict(t, V0, a, b):
+        t = np.array(t)
         # return solutionDE(
-        #     lambda V, t: \
+        #     lambda t, V: \
         #         V * (b - a * np.log(V))
-        # )(t, V0)[:, 0]
+        # )(t, V0)[0]
         return np.exp(b / a + (np.log(V0) - b / a) * np.exp(-a * t))
 
     params = 3
@@ -57,10 +60,11 @@ class Gompertz:
 
 class GeneralGompertz:
     def predict(t, V0, a, b, l):
+        t = np.array(t)
         return solutionDE(
-            lambda V, t: \
+            lambda t, V: \
                 V ** l * (b - a * np.log(V))
-        )(t, V0)[:, 0]
+        )(t, V0)[0]
 
     params = 4
     bounds = [
@@ -72,10 +76,11 @@ class GeneralGompertz:
 
 class ClassicBertalanffy:
     def predict(t, V0, a, b):
+        t = np.array(t)
         # return solutionDE(
-        #     lambda V, t: \
+        #     lambda t, V: \
         #         a * V ** (2 / 3) - b * V
-        # )(t, V0)[:, 0]
+        # )(t, V0)[0]
         return (a / b + (V0 ** (1 / 3) - a / b) * np.exp(-1 / 3 * b * t)) ** 3
 
     params = 3
@@ -87,10 +92,11 @@ class ClassicBertalanffy:
 
 class GeneralBertalanffy:
     def predict(t, V0, a, b, l):
+        t = np.array(t)
         # return solutionDE(
-        #     lambda V, t: \
+        #     lambda t, V: \
         #         a * V ** l - b * V
-        # )(t, V0)[:, 0]
+        # )(t, V0)[0]
         return (a / b + (V0 ** (1 - l) - a / b) * np.exp(-b * (1 - l) * t)) ** (1 / (1 - l))
 
     params = 4
@@ -107,24 +113,28 @@ class GeneralBertalanffy:
 
 class ExponentialLinear:
     def predict(t, V0, a, b, u):
+        t = np.array(t)
         return solutionDE(
-            lambda V, t: \
+            lambda t, V: \
                 a * V if t <= u else b
-        )(t, V0)[:, 0]
+        )(t, V0)[0]
 
     params = 4
 
 class GeneralLogistic:
     def predict(t, V0, a, b, K):
+        t = np.array(t)
         return solutionDE(
-            lambda V, t: \
+            lambda t, V: \
                 a * V * (1 - (V / K) ** b)
-        )(t, V0)[:, 0]
+        )(t, V0)[0]
 
     params = 4
 
-class dynamicCarryingCapacity:
+class DynamicCarryingCapacity:
     def predict(t, V0, a, b):
+        t = np.array(t)
+
         def dKdt(V):
             return b * V ** (2 / 3)
         def dVdt(K, V):
@@ -132,8 +142,8 @@ class dynamicCarryingCapacity:
 
         return solutionDE(
             # y is a [K, V] vector
-            lambda y, t : \
+            lambda t, y : \
                 [dKdt(y[1]), dVdt(y[0], y[1])]
-        )(t, V0)[:, 0]
+        )(t, V0)[1]
 
     params = 3
