@@ -292,11 +292,13 @@ if __name__ == "__main__":
         
     models = [
         models.Exponential,
-        models.LogisticVerhulst,
+        models.Logistic,
+        models.GeneralLogistic,
         models.Gompertz,
         models.GeneralGompertz,
         models.ClassicBertalanffy,
-        models.GeneralBertalanffy
+        models.GeneralBertalanffy,
+        models.DynamicCarryingCapacity
     ]
 
     processed_studies = {

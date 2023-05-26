@@ -39,7 +39,7 @@ def fitted_params(model, t, tv):
 
         return fitted_params
 
-    except:
+    except Exception as e:
         # not ideal, multiple errors possible:
         #  curve_fit, ValueError: Residuals are not finite in the initial point
         #  curve_fit, RuntimeError: Optimal parameters not found: The maximum number of function evaluations is exceeded
@@ -49,6 +49,7 @@ def fitted_params(model, t, tv):
         #  odeint: ODEintWarning: Excess accuracy requested (tolerances too small)
         #  odeint: ODEintWarning: Excess work done on this call (perhaps wrong Dfun type)
         #  odeint: lsoda--  at t (=r1), too much accuracy requested for precision of machine
+        print(e)
         return None
 
 

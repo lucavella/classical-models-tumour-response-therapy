@@ -91,27 +91,30 @@ if __name__ == "__main__":
 
     model_list = [
         models.Exponential,
-        models.LogisticVerhulst,
+        models.Logistic,
+        models.GeneralLogistic,
         models.Gompertz,
         models.GeneralGompertz,
         models.ClassicBertalanffy,
-        models.GeneralBertalanffy
+        models.GeneralBertalanffy,
+        models.DynamicCarryingCapacity
     ]
 
     processed_studies =  pre.preprocess(studies)
 
-    # save_study_params(
-    #     processed_studies, 
-    #     model_list, 
-    #     prefix='./data/params/experiment1_initial/', 
-    #     max_workers=mp.cpu_count()
-    # )
+    save_study_params(
+        processed_studies, 
+        model_list, 
+        prefix='./data/params/experiment1_ode_sol/', 
+        max_workers=mp.cpu_count()
+    )
 
     processed_atleast6_studies = map(lambda s: utils.get_at_least(s, 6), processed_studies)
+
     save_study_params(
         processed_atleast6_studies,
         model_list,
         drop_last=3,
-        prefix='./data/params/experiment2_initial/', 
+        prefix='./data/params/experiment2_ode_sol/', 
         max_workers=mp.cpu_count()
     )
