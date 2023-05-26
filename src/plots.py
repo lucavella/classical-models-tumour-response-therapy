@@ -50,7 +50,7 @@ def plot_change_trend(studies, amount=10):
             ax.axhline(y=0, linestyle=':', linewidth=1, color='gray')
             ax.set_xlabel('Time (weeks)', fontsize=16)
             ax.set_ylabel('Change in LD from baseline (mm)', fontsize=16)
-            ax.tick_params(axis='both', which='major', labelsize=16)
+            ax.tick_params(axis='both', which='major', labelsize=14)
 
     # plt.legend(
     #     [Line2D([0], [0], color=trend.color(), lw=4) for trend in utils.Trend], 
@@ -64,47 +64,53 @@ def plot_change_trend(studies, amount=10):
 
 # plot the proportions of trends for a study
 # corresponds to figure 1D, but barchart instead of a nested pie chart for readability
-def plot_proportion_trend(name, study):
-    # count amount of patients per trend and arm
-    trend_counts = study.groupby(['Arm', 'PatientID']) \
-                        .apply(lambda p: utils.detect_trend(p['TargetLesionLongDiam_mm'])) \
-                        .rename('Trend').reset_index() \
-                        .groupby('Arm')['Trend'] \
-                        .value_counts()
+def plot_proportion_trend(studies):
+    fig, axs = plt.subplots(1, len(studies), figsize=(25, 5))
 
-    # set trend categories that do not appear to 0
-    arms = trend_counts.index.get_level_values('Arm').unique()
-    trend_counts = trend_counts.reindex(
-        pd.MultiIndex.from_product([arms, list(utils.Trend)]), 
-        fill_value=0
-    )
+    for (name, study), ax in zip(studies.items(), axs):
+        # count amount of patients per trend and arm
+        trend_counts = study.groupby(['Arm', 'PatientID']) \
+                            .apply(lambda p: utils.detect_trend(p['TargetLesionLongDiam_mm'])) \
+                            .rename('Trend').reset_index() \
+                            .groupby('Arm')['Trend'] \
+                            .value_counts()
 
-    # plot for each trend
-    width = 0.2
-    n_trends = len(utils.Trend)
-    offsets = np.linspace( # calculate bar offsets
-        width / 2 - n_trends / 10, # min offset
-         - width / 2 + n_trends / 10, # max offset
-         num=n_trends
-    )
-    for trend, offset in zip(utils.Trend, offsets):
-        # get count for each arm and plot
-        trend_count = trend_counts.loc[pd.IndexSlice[:, trend]]
-        plt.bar(
-            np.array(arms) + offset,
-            trend_count, 
-            width=width, 
-            label=trend.name, 
-            color=trend.color()
+        # set trend categories that do not appear to 0
+        arms = trend_counts.index.get_level_values('Arm').unique()
+        trend_counts = trend_counts.reindex(
+            pd.MultiIndex.from_product([arms, list(utils.Trend)]), 
+            fill_value=0
         )
-    
-    # create plot
-    plt.xticks(arms)
-    plt.xlabel('Study arms', fontsize=16)
-    plt.ylabel('Number of occurences', fontsize=16)
-    plt.title(f'Trend categories per Study Arm for {name}', fontsize=24)
-    plt.legend(fontsize=16)
-    plt.show()
+
+        # plot for each trend
+        width = 0.2
+        n_trends = len(utils.Trend)
+        offsets = np.linspace( # calculate bar offsets
+            width / 2 - n_trends / 10, # min offset
+            - width / 2 + n_trends / 10, # max offset
+            num=n_trends
+        )
+        for trend, offset in zip(utils.Trend, offsets):
+            # get count for each arm and plot
+            trend_count = trend_counts.loc[pd.IndexSlice[:, trend]]
+            ax.bar(
+                np.array(arms) + offset,
+                trend_count, 
+                width=width, 
+                label=trend.name, 
+                color=trend.color()
+            )
+        
+        # create plot
+        ax.set_xticks(arms)
+        ax.set_xlabel('Study arms', fontsize=16)
+        ax.set_ylabel('Number of occurences', fontsize=16)
+        ax.set_title(name, fontsize=20)
+        ax.tick_params(axis='both', which='major', labelsize=14)
+        ax.legend(fontsize=16)
+
+    fig.tight_layout()
+    fig.savefig(f'../imgs/1D.svg', format='svg', dpi=1200)
 
   
 # plot the proportions of correct trends predictions based on 2 to "up_to" data points per study and arm
@@ -141,11 +147,16 @@ def plot_correct_predictions(studies, up_to=5, recist=True):
     ]
 
     # create plot
-    plt.boxplot(data, positions=amount_points)
-    plt.xlabel('Amount of first data points used to predict', fontsize=16)
-    plt.ylabel('Proportion of correct predictions', fontsize=16)
-    plt.title(f'Proportion of correct trend prediction with 2 up to {up_to} data points', fontsize=24)
-    plt.show()
+    fig, ax = plt.subplots(figsize=(15, 15))
+
+    ax.boxplot(data, positions=amount_points)
+    ax.set_xlabel('Amount of first data points used to predict', fontsize=16)
+    ax.set_ylabel('Proportion of correct predictions', fontsize=16)
+    ax.set_title(f'Proportion of correct trend prediction\nwith 2 up to {up_to} data points', fontsize=20)
+    ax.tick_params(axis='both', which='major', labelsize=14)
+
+    fig.tight_layout()
+    fig.savefig(f'../imgs/1E.svg', format='svg', dpi=1200)
 
 
 # plot actual vs predicted normalized tumor volume values
@@ -154,7 +165,7 @@ def plot_actual_fitted(studies, models, dirname, log_scale=False):
     def get_params(params, p):
         return np.array(params.loc[params['PatientID'] == p].iloc[0, 4:])
 
-    fig, axs = plt.subplots(len(studies), len(models), figsize=(25, 25))
+    fig, axs = plt.subplots(len(studies), len(models), figsize=(30, 25))
 
     for i, ((name, study), ax_row) in enumerate(zip(studies.items(), axs), start=1):
         for model, ax in zip(models, ax_row):
@@ -172,15 +183,15 @@ def plot_actual_fitted(studies, models, dirname, log_scale=False):
             if log_scale:
                 ax.set_xscale('log')
                 ax.set_yscale('log')
-            ax.set_xlabel('Actual normalized tumor volume', fontsize=10)
-            ax.set_ylabel('Predicted normalized tumor volume', fontsize=10)
-            ax.set_title(f'Study: {name}, Model: {model.__name__}', fontsize=12)
+            ax.set_xlabel('Actual normalized tumor volume', fontsize=12)
+            ax.set_ylabel('Predicted normalized tumor volume', fontsize=12)
+            ax.set_title(f'{name} — {model.__name__}', fontsize=16)
 
     fig.tight_layout()
     fig.savefig('../imgs/2C.svg', format='svg', dpi=1200)
 
 
-def plot_trend_pred_error(studies, models, dirname, error_metric='MAE', recist=True, normalize=True):
+def plot_trend_pred_error(studies, models, dirname, error_metric='MAE', recist=True):
     def get_params(params, p):
         return np.array(params.loc[params['PatientID'] == p].iloc[0, 4:])
     
@@ -253,14 +264,19 @@ def plot_trend_pred_error(studies, models, dirname, error_metric='MAE', recist=T
 
     results = pd.concat(results)
     
-    ax = sns.heatmap(results, annot=True, annot_kws={'fontsize': 16})
-    ax.set_title(f'{error_metric} values categorized by final {trend_name}', fontsize=20)
-    ax.tick_params(labelsize=16)
+    fig, ax = plt.subplots(figsize=(15, 15))
 
-    plt.xlabel('')
-    plt.ylabel('')
-    plt.xticks(rotation=45, ha='center')
-    plt.show()
+    ax = sns.heatmap(results, annot=True, annot_kws={'fontsize': 16}, ax=ax)
+    ax.set_title(f'{error_metric} values categorized by final {trend_name}', fontsize=20)
+    ax.tick_params(axis='both', labelsize=16)
+    ax.tick_params(axis='x', labelrotation=45)
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    
+    fig.axes[-1].tick_params(labelsize=16)
+    fig.align_xlabels()
+    fig.tight_layout()
+    fig.savefig(f'../imgs/3_{error_metric}.svg', format='svg', dpi=1200)
     
 
 
@@ -292,13 +308,12 @@ if __name__ == "__main__":
 
     # plot_change_trend(processed_studies)
 
-    # for name, study in processed_studies.items():
-    #     plot_proportion_trend(name, study)
+    # plot_proportion_trend(processed_studies)
 
     # plot_correct_predictions(processed_studies)
 
-    # plot_actual_fitted(processed_studies, models, './data/params/experiment1_initial')
+    plot_actual_fitted(processed_studies, models, './data/params/experiment1_initial')
     
-    plot_trend_pred_error(processed_studies, models, 'data/params/experiment1_initial', error_metric='R2')
+    # plot_trend_pred_error(processed_studies, models, 'data/params/experiment1_initial', error_metric='R2')
     
     
