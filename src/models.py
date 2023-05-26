@@ -112,38 +112,59 @@ class GeneralBertalanffy:
 # https://doi.org/10.1371/journal.pcbi.1003800 (p. 3)
 
 class ExponentialLinear:
-    def predict(t, V0, a, b, u):
+    def predict(t, V0, a, b):
         t = np.array(t)
+        u = 1 / a * np.log(b / (a * V0))
         return solutionDE(
             lambda t, V: \
                 a * V if t <= u else b
         )(t, V0)[0]
 
-    params = 4
+    params = 3
+    bounds = [
+        (0, np.inf), # V0
+        (0, np.inf), # a
+        (0, np.inf), # b
+    ]
 
 class GeneralLogistic:
-    def predict(t, V0, a, b, K):
-        t = np.array(t)
-        return solutionDE(
-            lambda t, V: \
-                a * V * (1 - (V / K) ** b)
-        )(t, V0)[0]
+    def predict(t, V0, a, v, K):
+        try:
+            t = np.array(t)
+            return solutionDE(
+                lambda t, V: \
+                    a * V * (1 - (V / K) ** v)
+            )(t, V0)[0]
+        except:
+            return GeneralLogistic.params * [math.nan]
 
     params = 4
+    bounds = [
+        (0, np.inf), # V0
+        (0, np.inf), # a
+        (2 / 3, 1),  # v
+        (0, np.inf), # K
+    ]
 
 class DynamicCarryingCapacity:
-    def predict(t, V0, a, b):
-        t = np.array(t)
+    def predict(t, V0, K0, a, b):
+        t = np.array(t)        
+        def dcc_system(t, y):
+            # y is a [K, V] vector
+            K, V = y
+            dK_dt = b * V ** (2 / 3)
+            dV_dt = a * V * np.log(K / V)
 
-        def dKdt(V):
-            return b * V ** (2 / 3)
-        def dVdt(K, V):
-            return a * V * np.log(K / V)
+            return [dK_dt, dV_dt]
 
         return solutionDE(
-            # y is a [K, V] vector
-            lambda t, y : \
-                [dKdt(y[1]), dVdt(y[0], y[1])]
-        )(t, V0)[1]
+            dcc_system
+        )(t, V0, K0)[0]
 
     params = 3
+    bounds = [
+        (0, np.inf), # V0
+        (0, np.inf), # K0
+        (0, np.inf), # a
+        (0, np.inf), # b
+    ]
