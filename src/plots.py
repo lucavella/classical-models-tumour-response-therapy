@@ -4,7 +4,7 @@ import math
 import warnings
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_error, r2_score
 import seaborn as sns
 
 import models
@@ -180,17 +180,32 @@ def plot_actual_fitted(studies, models, dirname, log_scale=False):
     fig.savefig('../imgs/2C.svg', format='svg', dpi=1200)
 
 
-def plot_trend_pred_error(studies, models, dirname, error_metric='MAE', recist=True):
+def plot_trend_pred_error(studies, models, dirname, error_metric='MAE', recist=True, normalize=True):
     def get_params(params, p):
         return np.array(params.loc[params['PatientID'] == p].iloc[0, 4:])
     
-    def error_f(p, y, pred_y):
+    def error_f(model, t):
         if error_metric == 'MAE':
-            return mean_absolute_error(y, pred_y)
+            return mean_absolute_error(
+                t['TumorVolumeNorm'], 
+                t['PredictedTumorVolumeNorm']
+            )
         elif error_metric == 'AIC':
-            return utils.akaike_information_criterion(p, y, pred_y)
+            return utils.akaike_information_criterion(
+                model.params * len(t['PatientID'].unique()),
+                t['TumorVolumeNorm'], 
+                t['PredictedTumorVolumeNorm']
+            )
+        elif error_metric == 'R2':
+            return np.mean(
+                t.groupby('PatientID') \
+                 .apply(lambda p: r2_score(
+                     p['TumorVolumeNorm'], 
+                     p['PredictedTumorVolumeNorm']
+                 ))
+            )
     
-    # use Recist 1.1 categories
+    # use RECIST 1.1 categories
     if recist:
         detect_f = utils.detect_recist
         trend_name = 'RECIST'
@@ -205,6 +220,7 @@ def plot_trend_pred_error(studies, models, dirname, error_metric='MAE', recist=T
     for i, (name, study) in enumerate(studies.items(), start=1):
         study_results = pd.DataFrame(columns=model_names)
 
+        # detect trend per patient
         study = utils.get_at_least(study, 6)
         study_trends = study.groupby('PatientID') \
                             .apply(lambda p:
@@ -225,12 +241,9 @@ def plot_trend_pred_error(studies, models, dirname, error_metric='MAE', recist=T
                                     .join(study_trends, rsuffix='_') \
                                     .dropna()
 
+            # get the prediction error per study and trend
             pred_error = predicted.groupby('StudyTrend') \
-                                  .apply(lambda t: error_f(
-                                    model.params * len(t['PatientID'].unique()), 
-                                    t['TumorVolumeNorm'], 
-                                    t['PredictedTumorVolumeNorm']
-                                  )) \
+                                  .apply(lambda t: error_f(model, t)) \
                                   .rename('Error') \
                                   .sort_index()
 
@@ -239,7 +252,6 @@ def plot_trend_pred_error(studies, models, dirname, error_metric='MAE', recist=T
         results.append(study_results)
 
     results = pd.concat(results)
-    print(results.min().min())
     
     ax = sns.heatmap(results, annot=True, annot_kws={'fontsize': 16})
     ax.set_title(f'{error_metric} values categorized by final {trend_name}', fontsize=20)
@@ -287,6 +299,6 @@ if __name__ == "__main__":
 
     # plot_actual_fitted(processed_studies, models, './data/params/experiment1_initial')
     
-    plot_trend_pred_error(processed_studies, models, 'data/params/experiment1_initial', error_metric='AIC')
+    plot_trend_pred_error(processed_studies, models, 'data/params/experiment1_initial', error_metric='R2')
     
     
