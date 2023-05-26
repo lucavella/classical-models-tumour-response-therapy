@@ -184,6 +184,12 @@ def plot_trend_pred_error(studies, models, dirname, error_metric='MAE', recist=T
     def get_params(params, p):
         return np.array(params.loc[params['PatientID'] == p].iloc[0, 4:])
     
+    def error_f(p, y, pred_y):
+        if error_metric == 'MAE':
+            return mean_absolute_error(y, pred_y)
+        elif error_metric == 'AIC':
+            return utils.akaike_information_criterion(p, y, pred_y)
+    
     # use Recist 1.1 categories
     if recist:
         detect_f = utils.detect_recist
@@ -218,22 +224,24 @@ def plot_trend_pred_error(studies, models, dirname, error_metric='MAE', recist=T
                                     .rename('PredictedTumorVolumeNorm').reset_index() \
                                     .join(study_trends, rsuffix='_') \
                                     .dropna()
-            
-            if error_metric == 'MAE':
-                error_f = mean_absolute_error
-            elif error_metric == 'AIC':
-                error_f = utils.akaike_information_criterion(model.params)
 
             pred_error = predicted.groupby('StudyTrend') \
-                                  .apply(lambda t: error_f(t['TumorVolumeNorm'], t['PredictedTumorVolumeNorm'])) \
+                                  .apply(lambda t: error_f(
+                                    model.params * len(t['PatientID'].unique()), 
+                                    t['TumorVolumeNorm'], 
+                                    t['PredictedTumorVolumeNorm']
+                                  )) \
                                   .rename('Error') \
                                   .sort_index()
 
             study_results[model.__name__] = pred_error
 
         results.append(study_results)
+
+    results = pd.concat(results)
+    print(results.min().min())
     
-    ax = sns.heatmap(pd.concat(results), annot=True, annot_kws={'fontsize': 16})
+    ax = sns.heatmap(results, annot=True, annot_kws={'fontsize': 16})
     ax.set_title(f'{error_metric} values categorized by final {trend_name}', fontsize=20)
     ax.tick_params(labelsize=16)
 
