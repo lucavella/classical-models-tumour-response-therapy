@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import traceback
 from scipy import optimize as scopt
 
 
@@ -10,7 +11,7 @@ from scipy import optimize as scopt
 def fitted_params(model, t, tv):
     # returns sum of squared errors of model, given model parameters
     def model_sse(params):
-        pred_tv = model.predict(t, *params)
+        pred_tv = model.predict_fast(t, *params) # use fast numerical integration
         return np.sum(
             (tv - pred_tv) ** 2
         )
@@ -49,7 +50,7 @@ def fitted_params(model, t, tv):
         #  odeint: ODEintWarning: Excess accuracy requested (tolerances too small)
         #  odeint: ODEintWarning: Excess work done on this call (perhaps wrong Dfun type)
         #  odeint: lsoda--  at t (=r1), too much accuracy requested for precision of machine
-        print(e)
+        print(traceback.format_exc())
         return None
 
 

@@ -119,9 +119,11 @@ def plot_correct_predictions(studies, up_to=5, recist=True):
     # use Recist 1.1 categories
     if recist:
         detect_f = utils.detect_recist
+        trend = 'RECIST'
     # categories proposed by the authors
     else:
         detect_f = utils.detect_trend
+        trend = 'trend'
     
     amount_points = range(2, up_to + 1) # always at least 2 points
     merged_studies = pd.concat(studies.values(), ignore_index=True)
@@ -151,8 +153,8 @@ def plot_correct_predictions(studies, up_to=5, recist=True):
 
     ax.boxplot(data, positions=amount_points)
     ax.set_xlabel('Amount of first data points used to predict', fontsize=16)
-    ax.set_ylabel('Proportion of correct predictions', fontsize=16)
-    ax.set_title(f'Proportion of correct trend prediction\nwith 2 up to {up_to} data points', fontsize=20)
+    ax.set_ylabel(f'Proportion of correct {trend} predictions', fontsize=16)
+    ax.set_title(f'Proportion of correct {trend} predictions\nwith 2 up to {up_to} data points', fontsize=20)
     ax.tick_params(axis='both', which='major', labelsize=14)
 
     fig.tight_layout()
@@ -306,16 +308,15 @@ if __name__ == "__main__":
         for name, study in zip(study_names, pre.preprocess(studies))
     }
 
-    # plot_correct_predictions(processed_studies, recist=True)
-
     # plot_change_trend(processed_studies)
 
     # plot_proportion_trend(processed_studies)
 
+    # plot_correct_predictions(processed_studies, recist=True)
     # plot_correct_predictions(processed_studies)
 
-    plot_actual_fitted(processed_studies, models, './data/params/experiment1_initial')
+    # plot_actual_fitted(processed_studies, models, './data/params/experimen1_ivp')
     
-    # plot_trend_pred_error(processed_studies, models, 'data/params/experiment1_initial', error_metric='R2')
+    plot_trend_pred_error(processed_studies, models, 'data/params/experiment1_ivp', error_metric='MAE')
     
     
