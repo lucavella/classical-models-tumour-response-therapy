@@ -26,8 +26,9 @@ def clean_nonnumeric(vector, with_value=0):
 # return: combined preprocessed dataframe
 def preprocess(studies):
     for study in studies:
-        # sort records by time per patient
+        # sort records by time per patient and drop duplicate measurements
         study.sort_values(by=['PatientID', 'TreatmentDay'], inplace=True, ignore_index=True)
+        study.drop_duplicates(subset=['PatientID', 'TreatmentDay'], inplace=True)
 
         # extract study and arm nr
         study['StudyNr'] = \
