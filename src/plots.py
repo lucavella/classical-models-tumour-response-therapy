@@ -172,7 +172,15 @@ def plot_correct_predictions(studies, up_to=5, recist=True):
 # corresponds to figure 2C
 def plot_actual_fitted(studies, models, dirname, log_scale=True):
     def get_params(params, p):
-        return np.array(params.loc[params['PatientID'] == p].iloc[0, 4:])
+        return np.array(params.loc[params['PatientID'] == p].iloc[0, 3:])
+    
+    def predict(p):
+        p_params = get_params(params, p.name)
+        if np.isnan(p_params).any():
+            pred = [math.nan] * len(p['TreatmentDay'])
+        else:
+            pred = model.predict(p['TreatmentDay'], *p_params)
+        return pd.Series(pred)
 
     fig, axs = plt.subplots(len(studies), len(models), figsize=(30, 25))
 
@@ -181,15 +189,13 @@ def plot_actual_fitted(studies, models, dirname, log_scale=True):
             utils.filter_treatment_started(study), 
             3
         )
-
+        ax_row = [ax_row]
         for model, ax in zip(models, ax_row):
             params = pd.read_csv(f'{dirname}/study{i}_{model.__name__.lower()}.csv')
 
             # predict model function per patient
             predicted = study.groupby('PatientID') \
-                             .apply(lambda p: pd.Series(
-                                model.predict(p['TreatmentDay'], *get_params(params, p.name))
-                             )) \
+                             .apply(predict) \
                              .rename('PredictedTumorVolumeNorm').reset_index() \
                              .join(study, rsuffix='_') \
                              .dropna()
@@ -210,7 +216,15 @@ def plot_actual_fitted(studies, models, dirname, log_scale=True):
 
 def plot_trend_pred_error(studies, models, dirname, experiment, error_metric='MAE', recist=True):
     def get_params(params, p):
-        return np.array(params.loc[params['PatientID'] == p].iloc[0, 4:])
+        return np.array(params.loc[params['PatientID'] == p].iloc[0, 3:])
+    
+    def predict(p):
+        p_params = get_params(params, p.name)
+        if np.isnan(p_params).any():
+            pred = [math.nan] * len(p['TreatmentDay'])
+        else:
+            pred = model.predict(p['TreatmentDay'], *p_params)
+        return pd.Series(pred)
     
     def error_f(model, t):
         if error_metric == 'MAE':
@@ -265,19 +279,10 @@ def plot_trend_pred_error(studies, models, dirname, experiment, error_metric='MA
 
             # predict model function per patient
             predicted = study_trends.groupby('PatientID') \
-                                    .apply(lambda p: pd.Series(
-                                        model.predict(p['TreatmentDay'], *get_params(params, p.name))
-                                    )) \
+                                    .apply(predict) \
                                     .rename('PredictedTumorVolumeNorm').reset_index() \
                                     .join(study_trends, rsuffix='_') \
                                     .dropna()
-
-            with pd.option_context('display.max_rows', None,
-                    'display.max_columns', None,
-                    'display.precision', 5,
-                    ):
-                print(model)
-                print(predicted.groupby('PatientID').apply(lambda t: error_f(model, t)))
 
             # get the prediction error per study and trend
             pred_error = predicted.groupby('Trend') \
@@ -295,7 +300,7 @@ def plot_trend_pred_error(studies, models, dirname, experiment, error_metric='MA
     
     fig, ax = plt.subplots(figsize=(15, 15))
 
-    ax = sns.heatmap(results, annot=True, annot_kws={'fontsize': 16}, ax=ax, norm=SymLogNorm(1e2))
+    ax = sns.heatmap(results, annot=True, annot_kws={'fontsize': 16}, ax=ax)
     ax.set_title(f'Experiment {experiment} {error_metric} by final {trend_name}', fontsize=20)
     ax.tick_params(axis='both', labelsize=16)
     ax.tick_params(axis='x', labelrotation=45)
@@ -313,21 +318,21 @@ if __name__ == "__main__":
     # disable warning in terminal
     warnings.filterwarnings("ignore")
     # read all the studies as dataframes
-    study_names = ['FIR', 'POPLAR', 'BIRCH', 'OAK', 'IMVIGOR210']
+    study_names = ['FIR', 'POPLAR']#, 'BIRCH', 'OAK', 'IMVIGOR210']
     studies = [
         pd.read_excel(f'./data/study{i}.xlsx')
         for i, _ in enumerate(study_names, start=1)
     ]
         
     models = [
-        models.Exponential,
-        models.Logistic,
-        models.GeneralLogistic,
+        # models.Exponential,
+        # models.Logistic,
+        # models.GeneralLogistic,
         models.Gompertz,
-        models.GeneralGompertz,
-        models.ClassicBertalanffy,
-        models.GeneralBertalanffy,
-        models.DynamicCarryingCapacity
+        # models.GeneralGompertz,
+        # models.ClassicBertalanffy,
+        # models.GeneralBertalanffy,
+        # models.DynamicCarryingCapacity
     ]
 
     processed_studies = {
@@ -348,7 +353,7 @@ if __name__ == "__main__":
     #     processed_studies, 
     #     models,
     #     experiment=1,
-    #     dirname='data/params/experiment1_treatment',
+    #     dirname='data/params/experiment1_odeint',
     #     error_metric='MAE'
     # )
     
@@ -356,7 +361,7 @@ if __name__ == "__main__":
     #     processed_studies, 
     #     models,
     #     experiment=2,
-    #     dirname='data/params/experiment2_treatment',
+    #     dirname='data/params/experiment2_odeint',
     #     error_metric='R2'
     # )
     

@@ -36,7 +36,6 @@ solution = solve_odeint
 # Introduction to mathematical oncology (table 2.1)
 class Exponential:
     def predict(t, V0, a, b):
-        t = np.array(t)
         return solution(
             lambda t, V: \
                 (a - b) * V,
@@ -44,16 +43,14 @@ class Exponential:
             V0
         )
 
-    params = 3
+    params = 2
     bounds = [
-        (0, np.inf), # V0
         (0, np.inf), # a
         (0, np.inf), # b
     ]
 
 class Logistic:
     def predict(t, V0, g, K):
-        t = np.array(t)
         return solution(
             lambda t, V: \
                 g * V * (1 - V / K),
@@ -61,16 +58,14 @@ class Logistic:
             V0
         )
 
-    params = 3
+    params = 2
     bounds = [
-        (0, np.inf), # V0
         (0, np.inf), # g
         (0, np.inf), # K
     ]
 
 class Gompertz:
     def predict(t, V0, a, b):
-        t = np.array(t)
         return solution(
             lambda t, V: \
                 V * (b - a * np.log(V)),
@@ -78,16 +73,14 @@ class Gompertz:
             V0
         )
 
-    params = 3
+    params = 2
     bounds = [
-        (0, np.inf), # V0
         (0, np.inf), # a
         (-np.inf, np.inf), # b
     ]
 
 class GeneralGompertz:
     def predict(t, V0, a, b, l):
-        t = np.array(t)
         return solution(
             lambda t, V: \
                 V ** l * (b - a * np.log(V)),
@@ -95,9 +88,8 @@ class GeneralGompertz:
             V0
         )
 
-    params = 4
+    params = 3
     bounds = [
-        (0, np.inf), # V0
         (0, np.inf), # a
         (-np.inf, np.inf), # b
         (2 / 3, 1),  # l
@@ -105,7 +97,6 @@ class GeneralGompertz:
 
 class ClassicBertalanffy:
     def predict(t, V0, a, b):
-        t = np.array(t)
         return solution(
             lambda t, V: \
                 a * V ** (2 / 3) - b * V,
@@ -113,16 +104,14 @@ class ClassicBertalanffy:
             V0
         )
 
-    params = 3
+    params = 2
     bounds = [
-        (0, np.inf), # V0
         (0, np.inf), # a
         (0, np.inf), # b
     ]
 
 class GeneralBertalanffy:
     def predict(t, V0, a, b, l):
-        t = np.array(t)
         return solution(
             lambda t, V: \
                 a * V ** l - b * V,
@@ -130,9 +119,8 @@ class GeneralBertalanffy:
             V0
         )
 
-    params = 4
+    params = 3
     bounds = [
-        (0, np.inf), # V0
         (0, np.inf), # a
         (0, np.inf), # b
         (2 / 3, 1),  # l
@@ -144,7 +132,6 @@ class GeneralBertalanffy:
 
 class ExponentialLinear:
     def predict(t, V0, a, b):
-        t = np.array(t)
         u = 1 / a * np.log(b / (a * V0))
         return solution(
             lambda t, V: \
@@ -153,16 +140,14 @@ class ExponentialLinear:
             V0
         )
 
-    params = 3
+    params = 2
     bounds = [
-        (0, np.inf), # V0
         (0, np.inf), # a
         (0, np.inf), # b
     ]
 
 class GeneralLogistic:
     def predict(t, V0, a, v, K):
-        t = np.array(t)
         return solution(
             lambda t, V: \
                 a * V * (1 - (V / K) ** v),
@@ -170,9 +155,8 @@ class GeneralLogistic:
             V0
         )
 
-    params = 4
+    params = 3
     bounds = [
-        (0, np.inf), # V0
         (0, np.inf), # a
         (2 / 3, 1),  # v
         (0, np.inf), # K
@@ -180,7 +164,6 @@ class GeneralLogistic:
 
 class DynamicCarryingCapacity:
     def predict(t, V0, K0, a, b):
-        t = np.array(t)        
         def dcc_system(t, y):
             # y is a [K, V] vector
             K, V = y
@@ -196,9 +179,8 @@ class DynamicCarryingCapacity:
             K0
         )
 
-    params = 4
+    params = 3
     bounds = [
-        (0, np.inf), # V0
         (0, np.inf), # K0
         (0, np.inf), # a
         (0, np.inf), # b

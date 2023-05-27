@@ -7,16 +7,22 @@ from scipy import optimize as scopt
 
 # searches the best parameters for a given model class, over 
 # params: model class (see models.py), time vector, normalized tumor volume vector
-# return: optimal parameters for fitted function
+# return: optimal parameters for fitted function, None on fail
 def fitted_params(model, t, tv):
+    tv = np.array(tv)
+
     # returns sum of squared errors of model, given model parameters
     def model_sse(params):
-        pred_tv = model.predict(t, *params) # use fast numerical integration
+        pred_tv = model.predict(t, tv[0], *params) # use fast numerical integration
         return np.sum(
             (tv - pred_tv) ** 2
         )
+    
+    def predict(t, *params):
+        return model.predict(t, tv[0], *params)
         
     try:
+
         # initial guess for parameters
         finite_bounds = map(lambda b: (max(b[0], 0), min(b[1], 1)), model.bounds) # only keep lower bound
         diff_ev_result = scopt.differential_evolution(
@@ -29,7 +35,7 @@ def fitted_params(model, t, tv):
         # find optimal parameters for curve defined by
         bounds_t = zip(*model.bounds) # transpose
         fitted_params, cov_params = scopt.curve_fit(
-            model.predict,          # function to fit
+            predict,          # function to fit
             t,                      # time
             tv,                     # tumor volumes
             initial_params,         # initial guess
@@ -38,7 +44,8 @@ def fitted_params(model, t, tv):
             method='trf'            # Trust Region Reflective
         )
 
-        return fitted_params
+        # return fitted params with V0 first data point
+        return np.insert(fitted_params, 0, tv[0], axis=0)
 
     except Exception as e:
         # not ideal, multiple errors possible:

@@ -49,10 +49,7 @@ def fit_study_params(study, model, experiment):
 def save_study_params(studies, models, experiment, prefix='', max_workers=None):
     def store(result):
         df, name = result
-
-        df.to_csv(
-            f'{prefix}{name}.csv'
-        )
+        df.to_csv(f'{prefix}{name}.csv', index=False)
 
     if max_workers:
         workers = max_workers
