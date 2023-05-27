@@ -32,21 +32,14 @@ def check_patient_overlap(studies):
 # params: time vector in days
 # return: time vector in weeks
 def convert_to_weeks(time):
-    return [i/7 for i in time]
+    return np.array([i/7 for i in time])
 
 
 # removes measurements before treatment started
-# params: time and measurements
-# return: time and measurements since treatment started
-def filter_treatment_started(time, data):
-    time = np.array(time)
-    data = np.array(data)
-
-    treatment_started = time >= 0
-    return (
-        time[treatment_started],
-        data[treatment_started]
-    )
+# params: study dataframe
+# return: study dataframe with only records since treatmen started
+def filter_treatment_started(study):
+    return study[study['TreatmentDay'] > 0]
 
 
 # Trend enum
@@ -123,14 +116,17 @@ def detect_recist(vector):
         return Recist.SD
     
 
-def akaike_information_criterion(k, y, y_pred):
+def akaike_information_criterion(k, y, y_pred, delta=True):
     n = len(y)
 
     df = n - k # degrees of freedom
     rss = np.sum((y - y_pred) ** 2) # residual sum of squares
     sigma2 = rss / df  # reduced chi-squared statistic
 
-    # max value log-likelihood (doubled)
-    lnL2 = - n * np.log(2 * np.pi) - n * np.log(sigma2) - df
-    
-    return 2 * k - lnL2
+    if delta:
+        return 2 * k + n * np.log(sigma2)
+    else:
+        # max value log-likelihood (doubled)
+        lnL2 = - n * np.log(2 * np.pi) - n * np.log(sigma2) - df
+        
+        return 2 * k - lnL2

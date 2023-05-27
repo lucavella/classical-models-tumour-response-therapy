@@ -19,16 +19,18 @@ def plot_change_trend(studies, amount=10):
     fig, axs = plt.subplots(1, len(studies), figsize=(25, 5))
     
     for (name, study), ax in zip(studies.items(), axs):
-        study = utils.get_at_least(study, 2) # patients need >= 2 data points
+        # patients need >= 2 data points
+        study = utils.get_at_least(
+            utils.filter_treatment_started(study), 
+            2
+        )
         
         # take up to "amount" patients from study
         for patient in study['PatientID'].unique()[:amount]:
             # get LD and treatment week since treatment started for patient
             patient_data = study.loc[study['PatientID'] == patient]
-            time, ld_data  = utils.filter_treatment_started(
-                utils.convert_to_weeks(patient_data['TreatmentDay']),
-                patient_data['TargetLesionLongDiam_mm']
-            )
+            time = utils.convert_to_weeks(patient_data['TreatmentDay'])
+            ld_data = np.array(patient_data['TargetLesionLongDiam_mm'])
 
             # get trend for color and LD deltas
             trend = utils.detect_trend(ld_data)
@@ -127,6 +129,10 @@ def plot_correct_predictions(studies, up_to=5, recist=True):
     
     amount_points = range(2, up_to + 1) # always at least 2 points
     merged_studies = pd.concat(studies.values(), ignore_index=True)
+    merged_studies = utils.get_at_least(
+        utils.filter_treatment_started(merged_studies), 
+        2
+    )
 
     # get trend of each patient
     trends = merged_studies.groupby(['StudyNr', 'Arm', 'PatientID']) \
@@ -170,6 +176,11 @@ def plot_actual_fitted(studies, models, dirname, log_scale=False):
     fig, axs = plt.subplots(len(studies), len(models), figsize=(30, 25))
 
     for i, ((name, study), ax_row) in enumerate(zip(studies.items(), axs), start=1):
+        study = utils.get_at_least(
+            utils.filter_treatment_started(study), 
+            2
+        )
+
         for model, ax in zip(models, ax_row):
             params = pd.read_csv(f'{dirname}/study{i}_{model.__name__.lower()}_all.csv')
 
@@ -193,7 +204,7 @@ def plot_actual_fitted(studies, models, dirname, log_scale=False):
     fig.savefig('../imgs/2C.svg', format='svg', dpi=1200)
 
 
-def plot_trend_pred_error(studies, models, dirname, error_metric='MAE', recist=True):
+def plot_trend_pred_error(studies, models, dirname, experiment, error_metric='MAE', recist=True):
     def get_params(params, p):
         return np.array(params.loc[params['PatientID'] == p].iloc[0, 4:])
     
@@ -234,7 +245,12 @@ def plot_trend_pred_error(studies, models, dirname, error_metric='MAE', recist=T
         study_results = pd.DataFrame(columns=model_names)
 
         # detect trend per patient
-        study = utils.get_at_least(study, 6)
+        study = utils.filter_treatment_started(study)
+        if experiment == 1:
+            study = utils.get_at_least(study, 3)
+        elif experiment == 2:
+            study = utils.get_at_least(study, 6)
+
         study_trends = study.groupby('PatientID') \
                             .apply(lambda p:
                                 f"{name} {detect_f(p['TumorVolumeNorm']).name}"
@@ -243,7 +259,12 @@ def plot_trend_pred_error(studies, models, dirname, error_metric='MAE', recist=T
                             .merge(study, on='PatientID', how='left')
 
         for model in models:
-            params = pd.read_csv(f'{dirname}/study{i}_{model.__name__.lower()}_all.csv')
+            if experiment == 1:
+                amount = 'all'
+            elif experiment == 2:
+                amount = 'drop3'
+
+            params = pd.read_csv(f'{dirname}/study{i}_{model.__name__.lower()}_{amount}.csv')
 
             # predict model function per patient
             predicted = study_trends.groupby('PatientID') \
@@ -317,6 +338,20 @@ if __name__ == "__main__":
 
     # plot_actual_fitted(processed_studies, models, './data/params/experimen1_ivp')
     
-    plot_trend_pred_error(processed_studies, models, 'data/params/experiment1_ivp', error_metric='MAE')
+    plot_trend_pred_error(
+        processed_studies, 
+        models,
+        experiment=1,
+        dirname='data/params/experiment1_ivp',
+        error_metric='MAE'
+    )
+    
+    plot_trend_pred_error(
+        processed_studies, 
+        models,
+        experiment=2,
+        dirname='data/params/experiment2_ivp',
+        error_metric='R2'
+    )
     
     
