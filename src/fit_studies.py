@@ -50,13 +50,8 @@ def save_study_params(studies, models, experiment, prefix='', max_workers=None):
     def store(result):
         df, name = result
 
-        if experiment == 1:
-            amount = 'all'
-        elif experiment == 2:
-            amount = 'drop3'
-
         df.to_csv(
-            f'{prefix}{name}_{amount}.csv'
+            f'{prefix}{name}.csv'
         )
 
     if max_workers:
@@ -113,7 +108,7 @@ if __name__ == "__main__":
         processed_studies,
         model_list,
         experiment=1,
-        prefix='./data/params/experiment1_treatment/',
+        prefix='./data/params/experiment1_odeint/',
         max_workers=mp.cpu_count()
     )
 
@@ -121,6 +116,6 @@ if __name__ == "__main__":
         processed_studies,
         model_list,
         experiment=2,
-        prefix='./data/params/experiment2_treatment/',
+        prefix='./data/params/experiment2_odeint/',
         max_workers=mp.cpu_count()
     )

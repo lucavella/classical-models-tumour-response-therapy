@@ -11,14 +11,14 @@ from scipy import optimize as scopt
 def fitted_params(model, t, tv):
     # returns sum of squared errors of model, given model parameters
     def model_sse(params):
-        pred_tv = model.predict_fast(t, *params) # use fast numerical integration
+        pred_tv = model.predict(t, *params) # use fast numerical integration
         return np.sum(
             (tv - pred_tv) ** 2
         )
         
     try:
         # initial guess for parameters
-        finite_bounds = map(lambda b: (b[0], 1), model.bounds) # only keep lower bound
+        finite_bounds = map(lambda b: (max(b[0], 0), min(b[1], 1)), model.bounds) # only keep lower bound
         diff_ev_result = scopt.differential_evolution(
             model_sse,              # minimize sum of squared errors
             list(finite_bounds),    # parameter bounds

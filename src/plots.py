@@ -4,6 +4,7 @@ import math
 import warnings
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from matplotlib.colors import SymLogNorm
 from sklearn.metrics import mean_absolute_error, r2_score
 import seaborn as sns
 
@@ -169,7 +170,7 @@ def plot_correct_predictions(studies, up_to=5, recist=True):
 
 # plot actual vs predicted normalized tumor volume values
 # corresponds to figure 2C
-def plot_actual_fitted(studies, models, dirname, log_scale=False):
+def plot_actual_fitted(studies, models, dirname, log_scale=True):
     def get_params(params, p):
         return np.array(params.loc[params['PatientID'] == p].iloc[0, 4:])
 
@@ -178,20 +179,23 @@ def plot_actual_fitted(studies, models, dirname, log_scale=False):
     for i, ((name, study), ax_row) in enumerate(zip(studies.items(), axs), start=1):
         study = utils.get_at_least(
             utils.filter_treatment_started(study), 
-            2
+            3
         )
 
         for model, ax in zip(models, ax_row):
-            params = pd.read_csv(f'{dirname}/study{i}_{model.__name__.lower()}_all.csv')
+            params = pd.read_csv(f'{dirname}/study{i}_{model.__name__.lower()}.csv')
 
             # predict model function per patient
             predicted = study.groupby('PatientID') \
                              .apply(lambda p: pd.Series(
                                 model.predict(p['TreatmentDay'], *get_params(params, p.name))
-                             ))
+                             )) \
+                             .rename('PredictedTumorVolumeNorm').reset_index() \
+                             .join(study, rsuffix='_') \
+                             .dropna()
 
             # create subplot
-            ax.scatter(study['TumorVolumeNorm'], predicted)
+            ax.scatter(predicted['TumorVolumeNorm'], predicted['PredictedTumorVolumeNorm'])
             ax.axline((0, 0), slope=1, linestyle=':', color='black')
             if log_scale:
                 ax.set_xscale('log')
@@ -252,19 +256,12 @@ def plot_trend_pred_error(studies, models, dirname, experiment, error_metric='MA
             study = utils.get_at_least(study, 6)
 
         study_trends = study.groupby('PatientID') \
-                            .apply(lambda p:
-                                f"{name} {detect_f(p['TumorVolumeNorm']).name}"
-                            ) \
-                            .rename('StudyTrend').reset_index() \
+                            .apply(lambda p: detect_f(p['TumorVolumeNorm'])) \
+                            .rename('Trend').reset_index() \
                             .merge(study, on='PatientID', how='left')
 
         for model in models:
-            if experiment == 1:
-                amount = 'all'
-            elif experiment == 2:
-                amount = 'drop3'
-
-            params = pd.read_csv(f'{dirname}/study{i}_{model.__name__.lower()}_{amount}.csv')
+            params = pd.read_csv(f'{dirname}/study{i}_{model.__name__.lower()}.csv')
 
             # predict model function per patient
             predicted = study_trends.groupby('PatientID') \
@@ -275,11 +272,20 @@ def plot_trend_pred_error(studies, models, dirname, experiment, error_metric='MA
                                     .join(study_trends, rsuffix='_') \
                                     .dropna()
 
+            with pd.option_context('display.max_rows', None,
+                    'display.max_columns', None,
+                    'display.precision', 5,
+                    ):
+                print(model)
+                print(predicted.groupby('PatientID').apply(lambda t: error_f(model, t)))
+
             # get the prediction error per study and trend
-            pred_error = predicted.groupby('StudyTrend') \
+            pred_error = predicted.groupby('Trend') \
                                   .apply(lambda t: error_f(model, t)) \
                                   .rename('Error') \
                                   .sort_index()
+            
+            pred_error.index = pred_error.index.map(lambda t: f'{name} {t}')
 
             study_results[model.__name__] = pred_error
 
@@ -289,8 +295,8 @@ def plot_trend_pred_error(studies, models, dirname, experiment, error_metric='MA
     
     fig, ax = plt.subplots(figsize=(15, 15))
 
-    ax = sns.heatmap(results, annot=True, annot_kws={'fontsize': 16}, ax=ax)
-    ax.set_title(f'{error_metric} values categorized by final {trend_name}', fontsize=20)
+    ax = sns.heatmap(results, annot=True, annot_kws={'fontsize': 16}, ax=ax, norm=SymLogNorm(1e2))
+    ax.set_title(f'Experiment {experiment} {error_metric} by final {trend_name}', fontsize=20)
     ax.tick_params(axis='both', labelsize=16)
     ax.tick_params(axis='x', labelrotation=45)
     ax.set_xlabel('')
@@ -299,7 +305,7 @@ def plot_trend_pred_error(studies, models, dirname, experiment, error_metric='MA
     fig.axes[-1].tick_params(labelsize=16)
     fig.align_xlabels()
     fig.tight_layout()
-    fig.savefig(f'../imgs/3_{error_metric}.svg', format='svg', dpi=1200)
+    fig.savefig(f'../imgs/3_{error_metric}_exp{experiment}.svg', format='svg', dpi=1200)
     
 
 
@@ -336,22 +342,22 @@ if __name__ == "__main__":
     # plot_correct_predictions(processed_studies, recist=True)
     # plot_correct_predictions(processed_studies)
 
-    # plot_actual_fitted(processed_studies, models, './data/params/experimen1_ivp')
+    plot_actual_fitted(processed_studies, models, './data/params/experiment1_odeint')
     
-    plot_trend_pred_error(
-        processed_studies, 
-        models,
-        experiment=1,
-        dirname='data/params/experiment1_ivp',
-        error_metric='MAE'
-    )
+    # plot_trend_pred_error(
+    #     processed_studies, 
+    #     models,
+    #     experiment=1,
+    #     dirname='data/params/experiment1_treatment',
+    #     error_metric='MAE'
+    # )
     
-    plot_trend_pred_error(
-        processed_studies, 
-        models,
-        experiment=2,
-        dirname='data/params/experiment2_ivp',
-        error_metric='R2'
-    )
+    # plot_trend_pred_error(
+    #     processed_studies, 
+    #     models,
+    #     experiment=2,
+    #     dirname='data/params/experiment2_treatment',
+    #     error_metric='R2'
+    # )
     
     
