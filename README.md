@@ -1,5 +1,7 @@
-# BIOINFO
-Project code by Yente De Wael and Luca Iacovella for Advanced Methods of Bioinformatics. Citation of the reimplemented article:
+# Classical mathematical models for prediction of response to chemotherapy and immunotherapy
+Advanced Methods in Bioinformatics course project code. Authors: Yente De Wael and Luca Iacovella.
+
+Citation of the reimplemented article:
 
 Ghaffari Laleh, N., Loeffler, C. M. L., Grajek, J., Staňková, K., Pearson, A. T., Muti, H. S., ... & Kather, J. N. (2022). Classical mathematical models for prediction of response to chemotherapy and immunotherapy. *PLOS Computational Biology*, 18(2), e1009822.
 
