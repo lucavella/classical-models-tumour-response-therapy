@@ -109,18 +109,18 @@ if __name__ == "__main__":
 
     processed_studies =  pre.preprocess(studies)
 
-    # save_study_params(
-    #     processed_studies, 
-    #     model_list,
-    #     experiment=1,
-    #     prefix='./data/params/experiment1_ivp/', 
-    #     max_workers=mp.cpu_count()
-    # )
-
     save_study_params(
         processed_studies,
         model_list,
-        experiment=2,
-        prefix='./data/params/experiment2_ivp/', 
+        experiment=1,
+        prefix='./data/params/experiment1_treatment/',
         max_workers=mp.cpu_count()
     )
+
+    # save_study_params(
+    #     processed_studies,
+    #     model_list,
+    #     experiment=2,
+    #     prefix='./data/params/experiment2_treatment/',
+    #     max_workers=mp.cpu_count()
+    # )
