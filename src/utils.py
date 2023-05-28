@@ -13,7 +13,8 @@ import warnings
 # return: dataframe with data points of patients with 'i' or more data points
 def get_at_least(study, i):
     return study.groupby('PatientID') \
-                  .filter(lambda group: group['PatientID'].count() >= i)
+                .filter(lambda group: group['PatientID'].count() >= i) \
+                .reset_index()
 
 
 # pairwise check if patient ID is reused across studies
@@ -39,7 +40,7 @@ def convert_to_weeks(time):
 # params: study dataframe
 # return: study dataframe with only records since treatmen started
 def filter_treatment_started(study):
-    return study[study['TreatmentDay'] > 0]
+    return study[study['TreatmentDay'] > 0].reset_index()
 
 
 # Trend enum

@@ -189,7 +189,7 @@ def plot_actual_fitted(studies, models, dirname, log_scale=True):
             utils.filter_treatment_started(study), 
             3
         )
-        ax_row = [ax_row]
+        
         for model, ax in zip(models, ax_row):
             params = pd.read_csv(f'{dirname}/study{i}_{model.__name__.lower()}.csv')
 
@@ -201,7 +201,7 @@ def plot_actual_fitted(studies, models, dirname, log_scale=True):
                              .dropna()
 
             # create subplot
-            ax.scatter(predicted['TumorVolumeNorm'], predicted['PredictedTumorVolumeNorm'])
+            ax.scatter(predicted['TumorVolumeNorm'], predicted['PredictedTumorVolumeNorm'], s=2)
             ax.axline((0, 0), slope=1, linestyle=':', color='black')
             if log_scale:
                 ax.set_xscale('log')
@@ -318,21 +318,21 @@ if __name__ == "__main__":
     # disable warning in terminal
     warnings.filterwarnings("ignore")
     # read all the studies as dataframes
-    study_names = ['FIR', 'POPLAR']#, 'BIRCH', 'OAK', 'IMVIGOR210']
+    study_names = ['FIR', 'POPLAR', 'BIRCH', 'OAK', 'IMVIGOR210']
     studies = [
         pd.read_excel(f'./data/study{i}.xlsx')
         for i, _ in enumerate(study_names, start=1)
     ]
         
     models = [
-        # models.Exponential,
-        # models.Logistic,
-        # models.GeneralLogistic,
+        models.Exponential,
+        models.Logistic,
+        models.GeneralLogistic,
         models.Gompertz,
-        # models.GeneralGompertz,
-        # models.ClassicBertalanffy,
-        # models.GeneralBertalanffy,
-        # models.DynamicCarryingCapacity
+        models.GeneralGompertz,
+        models.ClassicBertalanffy,
+        models.GeneralBertalanffy,
+        models.DynamicCarryingCapacity
     ]
 
     processed_studies = {
@@ -340,29 +340,53 @@ if __name__ == "__main__":
         for name, study in zip(study_names, pre.preprocess(studies))
     }
 
-    # plot_change_trend(processed_studies)
+    plot_change_trend(processed_studies)
 
-    # plot_proportion_trend(processed_studies)
+    plot_proportion_trend(processed_studies)
 
-    # plot_correct_predictions(processed_studies, recist=True)
-    # plot_correct_predictions(processed_studies)
+    plot_correct_predictions(processed_studies, recist=True)
+    plot_correct_predictions(processed_studies)
 
     plot_actual_fitted(processed_studies, models, './data/params/experiment1_odeint')
     
-    # plot_trend_pred_error(
-    #     processed_studies, 
-    #     models,
-    #     experiment=1,
-    #     dirname='data/params/experiment1_odeint',
-    #     error_metric='MAE'
-    # )
+    plot_trend_pred_error(
+        processed_studies, 
+        models,
+        experiment=1,
+        dirname='data/params/experiment1_odeint',
+        error_metric='MAE'
+    )
     
-    # plot_trend_pred_error(
-    #     processed_studies, 
-    #     models,
-    #     experiment=2,
-    #     dirname='data/params/experiment2_odeint',
-    #     error_metric='R2'
-    # )
+    plot_trend_pred_error(
+        processed_studies, 
+        models,
+        experiment=1,
+        dirname='data/params/experiment1_odeint',
+        error_metric='AIC'
+    )
+    
+    plot_trend_pred_error(
+        processed_studies, 
+        models,
+        experiment=2,
+        dirname='data/params/experiment2_odeint',
+        error_metric='MAE'
+    )
+    
+    plot_trend_pred_error(
+        processed_studies, 
+        models,
+        experiment=2,
+        dirname='data/params/experiment2_odeint',
+        error_metric='AIC'
+    )
+    
+    plot_trend_pred_error(
+        processed_studies, 
+        models,
+        experiment=2,
+        dirname='data/params/experiment2_odeint',
+        error_metric='R2'
+    )
     
     

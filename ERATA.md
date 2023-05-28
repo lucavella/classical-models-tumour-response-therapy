@@ -23,7 +23,9 @@ https://github.com/KatherLab/ImmunotherapyModels/blob/main/FitFunctions.py
 
 * When converting to weeks, the code sets negative values to 0.1
     
-* If LD has no value (NOT EVALUABLE, TOO SMALL TO MEASURE), paper assumes it is too small to evaluate and thus set it to a volume of 0. We use the same assumption
+* If LD has no value (NOT EVALUABLE, TOO SMALL TO MEASURE), paper assumes it is too small to evaluate and thus set it to a volume of 0. We use the same assumption.
+
+* Data for model fitting, negative time values are set to 0.1. The goal is to model treatment response, so negative time values are from before treatment started and should be filtered.
 
 ## Source
 * The authors don't provide a mapping to the named studies in the paper to their anonymized studies.
