@@ -1,4 +1,4 @@
-# Classical mathematical models for prediction of response to chemotherapy and immunotherapy
+# Classical growth models to predict cancer therapy response
 Advanced Methods in Bioinformatics course project code. Authors: Yente De Wael and Luca Iacovella.
 
 Citation of the reimplemented article:
