@@ -141,3 +141,12 @@ def akaike_information_criterion(k, y, y_pred, delta=True):
         lnL2 = - n * np.log(2 * np.pi) - n * np.log(sigma2) - df
         
         return 2 * k - lnL2
+    
+
+def format_float(n):
+    if n == 0:
+        return f'0.00000'
+    elif abs(n) < 0.000001 or abs(n) > 10:
+        return f'{n:.2e}'
+    else:
+        return f'{n:.5f}'

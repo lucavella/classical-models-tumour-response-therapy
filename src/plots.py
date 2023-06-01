@@ -13,6 +13,7 @@ import seaborn as sns
 import models
 import utils
 import preprocessing as pre
+import fit_studies as fit
 
 
 # plot the change in LD from treatment start for given study
@@ -206,32 +207,22 @@ def plot_correct_predictions(studies, up_to_nth=4, recist=True):
 
 # plot actual vs predicted normalized tumor volume values
 # corresponds to figure 2C
-def plot_actual_fitted(studies, models, dirname, log_scale=True, part=None):
-    def get_params(params, p):
-        return np.array(params.loc[params['PatientID'] == p].iloc[0, 3:])
-    
-    def predict(p):
-        p_params = get_params(params, p.name)
-        if np.isnan(p_params).any():
-            pred = [math.nan] * len(p['TreatmentDay'])
-        else:
-            pred = model.predict(p['TreatmentDay'], *p_params)
-        return pd.Series(pred)
-
+def plot_actual_fitted(studies, models, dirname, experiment, log_scale=True, part=None):
     fig, axs = plt.subplots(len(studies), len(models), figsize=(12, 12))
 
     for i, ((name, study), ax_row) in enumerate(zip(studies.items(), axs), start=1):
-        study = utils.get_at_least(
-            utils.filter_treatment_started(study), 
-            3
-        )
+        study = utils.filter_treatment_started(study)
+        if experiment == 1:
+            study = utils.get_at_least(study, 3)
+        elif experiment == 2:
+            study = utils.get_at_least(study, 6)
         
         for model, ax in zip(models, ax_row):
             params = pd.read_csv(f'{dirname}/study{i}_{model.__name__.lower()}.csv')
 
             # predict model function per patient
             predicted = study.groupby('PatientID') \
-                             .apply(predict) \
+                             .apply(lambda p: fit.checkpoint_predict(p, model, params)) \
                              .rename('PredictedTumorVolumeNorm').reset_index() \
                              .join(study, rsuffix='_') \
                              .dropna()
@@ -253,24 +244,13 @@ def plot_actual_fitted(studies, models, dirname, log_scale=True, part=None):
     fig.tight_layout()
 
     if part:
-        filename = f'../imgs/2C_{part}.svg'
+        filename = f'../imgs/2C_exp{experiment}_{part}.svg'
     else:
-        filename = '../imgs/2C.svg'
+        filename = f'../imgs/2C_exp{experiment}.svg'
     fig.savefig(filename, format='svg', dpi=600)
 
 
-def plot_trend_pred_error(studies, models, dirname, experiment, error_metric='MAE', recist=True):
-    def get_params(params, p):
-        return np.array(params.loc[params['PatientID'] == p].iloc[0, 3:])
-    
-    def predict(p):
-        p_params = get_params(params, p.name)
-        if np.isnan(p_params).any():
-            pred = [math.nan] * len(p['TreatmentDay'])
-        else:
-            pred = model.predict(p['TreatmentDay'], *p_params)
-        return pd.Series(pred)
-    
+def plot_trend_pred_error(studies, models, dirname, experiment, error_metric='MAE', recist=True, normalize=False):    
     def error_f(model, t):
         if error_metric == 'MAE':
             return mean_absolute_error(
@@ -324,7 +304,7 @@ def plot_trend_pred_error(studies, models, dirname, experiment, error_metric='MA
 
             # predict model function per patient
             predicted = study_trends.groupby('PatientID') \
-                                    .apply(predict) \
+                                    .apply(lambda p: fit.checkpoint_predict(p, model, params)) \
                                     .rename('PredictedTumorVolumeNorm').reset_index() \
                                     .join(study_trends, rsuffix='_') \
                                     .dropna()
@@ -335,17 +315,42 @@ def plot_trend_pred_error(studies, models, dirname, experiment, error_metric='MA
                                   .rename('Error') \
                                   .sort_index()
             
-            pred_error.index = pred_error.index.map(lambda t: f'{name} {t}')
+            pred_error.index = pred_error.index.map(lambda t: f'{name} {t.name}')
 
             study_results[model.__name__] = pred_error
 
         results.append(study_results)
-
     results = pd.concat(results)
+
+    if normalize:
+        max = results.dropna().max(axis=1)
+        min = results.dropna().min(axis=1)
+        results = results.sub(min, axis=0).divide(max - min, axis=0)
     
     fig, ax = plt.subplots(figsize=(15, 15))
 
-    ax = sns.heatmap(results, annot=True, annot_kws={'fontsize': 16}, ax=ax)
+    # get best results per row
+    if error_metric == 'R2':
+        best_results = np.array(results).max(axis=1, keepdims=1)
+    else:
+        best_results = np.array(results).min(axis=1, keepdims=1)
+
+    underline = np.array([
+        r'\underline{' + utils.format_float(val) + '}' if is_best else utils.format_float(val)
+        for val, is_best in zip(
+            np.array(results).ravel(),
+            np.array(best_results == results).ravel()
+        )
+    ]).reshape(results.shape)
+
+    sns.heatmap(
+        results,
+        annot=underline,
+        annot_kws={'fontsize': 16},
+        fmt='',
+        cbar=True,
+        ax=ax
+    )
     # ax.set_title(f'Experiment {experiment} {error_metric} by final {trend_name}', fontsize=20, wrap=True)
     ax.tick_params(axis='both', labelsize=16)
     ax.tick_params(axis='x', labelrotation=45)
@@ -401,53 +406,57 @@ if __name__ == "__main__":
         processed_studies, 
         models[:4], 
         './data/params/experiment1_odeint', 
-        part=1
+        experiment=1,
+        part=1,
     )
     plot_actual_fitted(
         processed_studies, 
         models[4:], 
         './data/params/experiment1_odeint', 
+        experiment=1,
         part=2
     )
     
-    # plot_trend_pred_error(
-    #     processed_studies, 
-    #     models,
-    #     experiment=1,
-    #     dirname='data/params/experiment1_odeint',
-    #     error_metric='MAE'
-    # )
+    plot_trend_pred_error(
+        processed_studies, 
+        models,
+        experiment=1,
+        dirname='data/params/experiment1_odeint',
+        error_metric='MAE'
+    )
     
-    # plot_trend_pred_error(
-    #     processed_studies, 
-    #     models,
-    #     experiment=1,
-    #     dirname='data/params/experiment1_odeint',
-    #     error_metric='AIC'
-    # )
+    plot_trend_pred_error(
+        processed_studies, 
+        models,
+        experiment=1,
+        dirname='data/params/experiment1_odeint',
+        error_metric='AIC',
+        normalize=True
+    )
     
-    # plot_trend_pred_error(
-    #     processed_studies, 
-    #     models,
-    #     experiment=2,
-    #     dirname='data/params/experiment2_odeint',
-    #     error_metric='MAE'
-    # )
+    plot_trend_pred_error(
+        processed_studies, 
+        models,
+        experiment=2,
+        dirname='data/params/experiment2_odeint',
+        error_metric='MAE'
+    )
     
-    # plot_trend_pred_error(
-    #     processed_studies, 
-    #     models,
-    #     experiment=2,
-    #     dirname='data/params/experiment2_odeint',
-    #     error_metric='AIC'
-    # )
+    plot_trend_pred_error(
+        processed_studies, 
+        models,
+        experiment=2,
+        dirname='data/params/experiment2_odeint',
+        error_metric='AIC',
+        normalize=True
+    )
     
-    # plot_trend_pred_error(
-    #     processed_studies, 
-    #     models,
-    #     experiment=2,
-    #     dirname='data/params/experiment2_odeint',
-    #     error_metric='R2'
-    # )
+    plot_trend_pred_error(
+        processed_studies, 
+        models,
+        experiment=2,
+        dirname='data/params/experiment2_odeint',
+        error_metric='R2'
+    )
     
     

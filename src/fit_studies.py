@@ -1,4 +1,6 @@
 import pandas as pd
+import numpy as np
+import math
 import multiprocessing as mp
 import itertools as it
 import fitting as fit
@@ -73,6 +75,18 @@ def save_study_params(studies, models, experiment, prefix='', max_workers=None):
         for r in results:
             r.wait()
     
+
+def get_params(params, p):
+    return np.array(params.loc[params['PatientID'] == p].iloc[0, 3:])
+
+
+def checkpoint_predict(p, model, params):
+    p_params = get_params(params, p.name)
+    if np.isnan(p_params).any():
+        pred = [math.nan] * len(p['TreatmentDay'])
+    else:
+        pred = model.predict(p['TreatmentDay'], *p_params)
+    return pd.Series(pred)
 
 
 if __name__ == "__main__":

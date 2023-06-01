@@ -1,4 +1,4 @@
-# Classical growth models to predict cancer therapy response
+# Classical growth models to predict tumour therapy response
 Advanced Methods in Bioinformatics course project code. Authors: Yente De Wael and Luca Iacovella.
 
 Citation of the reimplemented article:
