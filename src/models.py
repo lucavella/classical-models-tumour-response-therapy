@@ -162,7 +162,7 @@ class GeneralLogistic:
         (0, np.inf), # K
     ]
 
-class DynamicCarryingCapacity:
+class DynCarryingCapacity:
     def predict(t, V0, K0, a, b):
         def dcc_system(t, y):
             # y is a [K, V] vector

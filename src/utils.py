@@ -51,11 +51,11 @@ class Trend(Enum):
 
     def color(self):
         if self == Trend.UP:
-            return '#d73027'
+            return '#1a9850'
         elif self == Trend.FLUCTUATE:
             return '#313695'
         elif self == Trend.DOWN:
-            return '#1a9850'
+            return '#d73027'
 
     def __lt__(self, other):
         return self.value < other.value
@@ -64,8 +64,18 @@ class Trend(Enum):
 class Recist(Enum):
     CR = 1
     PR = 2
-    PD = 3
-    SD = 4
+    SD = 3
+    PD = 4
+
+    def color(self):
+        if self == Recist.CR:
+            return '#1a9850'
+        elif self == Recist.PR:
+            return '#fdcc0f'
+        elif self == Recist.SD:
+            return '#313695'
+        elif self == Recist.PD:
+            return '#d73027'
 
     def __lt__(self, other):
         return self.value < other.value

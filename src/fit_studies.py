@@ -96,7 +96,7 @@ if __name__ == "__main__":
         models.GeneralGompertz,
         models.ClassicBertalanffy,
         models.GeneralBertalanffy,
-        models.DynamicCarryingCapacity
+        models.DynCarryingCapacity
     ]
 
     processed_studies =  pre.preprocess(studies)
